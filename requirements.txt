@@ -1,0 +1,15 @@
+## Minimal dependencies for:
+## - multi-RAG over existing ChromaDB collections
+## - Mistral reasoning (GPU if available)
+## - output: full reasoning JSON (includes SDXL prompt)
+
+# Vector store + embeddings
+chromadb>=0.4.24
+sentence-transformers>=2.6
+
+# LLM inference
+torch>=2.1
+transformers>=4.39
+accelerate>=0.27
+tokenizers>=0.15
+safetensors>=0.4

@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual envs
+.venv/
+venv/
+ENV/
+
+# OS / editor
+.DS_Store
+.vscode/
+
+# Caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local data artifacts (usually too large for GitHub)
+data/chromadb/
+data/images/
+data/pdfs/
+
+# Logs
+logs/
