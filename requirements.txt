@@ -13,3 +13,6 @@ transformers>=4.39
 accelerate>=0.27
 tokenizers>=0.15
 safetensors>=0.4
+
+# UI
+streamlit>=1.31

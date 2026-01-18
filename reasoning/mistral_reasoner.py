@@ -8,7 +8,9 @@ MistralReasoner.initialize().
 from __future__ import annotations
 
 import json
+import os
 import re
+import sys
 from typing import Dict, Optional, Tuple
 
 import torch
@@ -115,8 +117,48 @@ class MistralReasoner:
         """
         safe_context = (context or "").strip()
 
-        # CLIP-optimized prompt: concrete entities/actions + explicit metaphor + strict SDXL prompt structure.
-        # Keep strict JSON output so downstream code can reliably extract `sdxl_prompt`.
+        # CPU inference is extremely slow for Mistral-7B; a shorter prompt helps the model
+        # reach valid JSON within time limits.
+        fast_env = os.getenv("PCD_FAST_PROMPT", "").strip() in {"1", "true", "True", "yes", "YES"}
+        on_cpu = (self._infer_input_device() == "cpu")
+        use_fast = fast_env or on_cpu
+
+        if use_fast:
+            return f"""<s>[INST]
+You are a Tunisian cultural expert.
+
+Explain this Tunisian proverb and generate a CLIP-friendly SDXL prompt.
+
+Proverb: "{query}"
+RAG context (may be empty): "{safe_context}"
+
+Rules:
+- If RAG context is helpful, use it; otherwise ignore it.
+- Be concise (1–2 sentences per field).
+- Return ONLY valid JSON with exactly these keys and nothing else:
+{{
+  "proverb": string,
+  "literal_translation": string,
+  "core_meaning": string,
+  "life_lesson": string,
+  "usage_example": string,
+  "scene_description": string,
+  "scene_elements": [string, ...],
+  "metaphor_and_mood": string,
+  "art_style": string,
+  "story": string,
+  "sdxl_prompt": string
+}}
+
+The value of "sdxl_prompt" MUST follow this structure exactly:
+A [Art Style] illustration depicting [specific environment].
+A [clearly described character or characters] performing [specific action] with [key objects].
+The scene symbolizes [explicit metaphor meaning] through [visual cues such as light, posture, contrast, or setting].
+Mood: [clear emotional tone].
+High-resolution, sharp focus, detailed textures, professional illustration.
+[/INST]"""
+
+        # Full detailed prompt (good for GPU, more reliable when compute is fast).
         prompt = f"""<s>[INST]
     Role
 
@@ -278,6 +320,7 @@ class MistralReasoner:
                 max_new_tokens=max_new_tokens,
                 do_sample=False,
                 max_time=max_time_s,
+                eos_token_id=self.tokenizer.eos_token_id,
                 pad_token_id=self.tokenizer.eos_token_id
             )
 
@@ -298,6 +341,8 @@ class MistralReasoner:
             except Exception:
                 pass
         
+        verbose = os.getenv("PCD_VERBOSE", "").strip() in {"1", "true", "True", "yes", "YES"}
+
         # Extract JSON from response
         try:
             start_idx = response.find('{')
@@ -306,9 +351,19 @@ class MistralReasoner:
                 json_str = response[start_idx:end_idx]
                 result = json.loads(json_str)
             else:
+                if verbose:
+                    snippet = response.strip() or "<empty output>"
+                    if len(snippet) > 1200:
+                        snippet = snippet[:1200] + "\n...<truncated>..."
+                    sys.stderr.write("\n[PCD_VERBOSE] Model output did not contain a JSON object. Snippet:\n" + snippet + "\n\n")
                 result = self._create_fallback_response(response, query, context)
         
         except json.JSONDecodeError:
+            if verbose:
+                snippet = response.strip()
+                if len(snippet) > 1200:
+                    snippet = snippet[:1200] + "\n...<truncated>..."
+                sys.stderr.write("\n[PCD_VERBOSE] Model output was not valid JSON. Snippet:\n" + snippet + "\n\n")
             result = self._create_fallback_response(response, query, context)
         
         # Ensure we always return a CLIP-friendly SDXL prompt.
@@ -453,15 +508,36 @@ class MistralReasoner:
                 "sdxl_prompt": sdxl_prompt,
             }
 
-        # Otherwise, basic legacy fallback
+        # Otherwise: return v2 shape with query-specific placeholders.
+        # This avoids returning the same generic text for every proverb when the model times out (common on CPU-only).
+        ctx_hint = (context or "").strip()
+        if ctx_hint:
+            ctx_hint = ctx_hint.replace("\n", " ")
+            if len(ctx_hint) > 260:
+                ctx_hint = ctx_hint[:260] + "..."
+        core = (
+            (response or "").strip().replace("\n", " ")
+            or (f"Could not parse model output in time. Context hint: {ctx_hint}" if ctx_hint else "Could not parse model output in time.")
+        )
+        if len(core) > 260:
+            core = core[:260] + "..."
+
         return {
             "proverb": query,
-            "interpretation": response[:500] if len(response) > 500 else response,
-            "cultural_context": (context or "Unable to extract specific cultural context")[:500],
-            "image_prompt": (
-                "A vibrant Tunisian folk art illustration. "
-                f"A metaphorical scene inspired by the proverb: {query}. "
-                "Warm light, rich textures, expressive characters. High-resolution, detailed, professional artwork."
+            "literal_translation": "",
+            "core_meaning": core,
+            "life_lesson": "",
+            "usage_example": "",
+            "scene_description": f"A realistic Tunisian scene inspired by: {query}",
+            "scene_elements": [],
+            "metaphor_and_mood": "",
+            "art_style": "Vibrant Tunisian folk art",
+            "story": "",
+            "sdxl_prompt": (
+                "A Vibrant Tunisian folk art illustration depicting a Tunisian everyday environment. "
+                "A clearly described Tunisian character performing a specific action with key visible objects. "
+                f"The scene symbolizes the meaning of: {query} through visual cues like posture, lighting, and setting. "
+                "Mood: warm, grounded. High-resolution, sharp focus, detailed textures, professional illustration."
             ),
         }
     

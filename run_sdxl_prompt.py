@@ -146,6 +146,8 @@ def generate_reasoning(
     proverb: str,
     persist_directory: str = "data/chromadb",
     collections: Optional[Iterable[str]] = None,
+    max_new_tokens: int = 640,
+    max_time_s: int = 120,
 ) -> Dict:
     """Main API: returns the full reasoning output dict."""
 
@@ -172,7 +174,7 @@ def generate_reasoning(
         reasoner = MistralReasoner()
         reasoner.initialize()
 
-        result = reasoner.reason(clean, context)
+        result = reasoner.reason(clean, context, max_new_tokens=max_new_tokens, max_time_s=max_time_s)
 
     if not isinstance(result, dict) or not result:
         raise RuntimeError("Model did not produce a structured reasoning output")
@@ -193,7 +195,11 @@ def _print_json(obj: Dict, pretty: bool) -> None:
 
 def main(argv: List[str]) -> int:
     parser = argparse.ArgumentParser(description="Generate full reasoning JSON for a Tunisian proverb (includes sdxl_prompt).")
-    parser.add_argument("proverb", nargs="?", help="Tunisian proverb text")
+    parser.add_argument(
+        "proverb",
+        nargs="*",
+        help="Tunisian proverb text. If it contains spaces, you can either quote it or pass it as multiple words.",
+    )
     parser.add_argument("--chroma-dir", default=os.getenv("PCD_CHROMA_DIR", "data/chromadb"), help="ChromaDB persist directory")
     parser.add_argument(
         "--collections",
@@ -202,6 +208,18 @@ def main(argv: List[str]) -> int:
     )
     parser.add_argument("--pretty", action="store_true", default=_env_truthy("PCD_PRETTY"), help="Pretty-print JSON")
     parser.add_argument("--verbose", action="store_true", default=_env_truthy("PCD_VERBOSE"), help="Show internal logs")
+    parser.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=int(os.getenv("PCD_MAX_NEW_TOKENS", "640")),
+        help="Max new tokens to generate (default: 640).",
+    )
+    parser.add_argument(
+        "--max-time",
+        type=int,
+        default=int(os.getenv("PCD_MAX_TIME_S", "120")),
+        help="Maximum generation time in seconds (default: 120).",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Only test multi-RAG retrieval; do not run Mistral")
     parser.add_argument("--repl", action="store_true", help="Interactive mode (keeps model loaded between queries)")
     args = parser.parse_args(argv[1:])
@@ -244,7 +262,12 @@ def main(argv: List[str]) -> int:
             sink = None if args.verbose else io.StringIO()
             with contextlib.redirect_stdout(sink or sys.stdout), contextlib.redirect_stderr(sink or sys.stderr):
                 context, stats = build_multirag_context(clean, persist_directory=args.chroma_dir, sources=None)
-                result = reasoner.reason(clean, context)
+                result = reasoner.reason(
+                    clean,
+                    context,
+                    max_new_tokens=int(args.max_new_tokens),
+                    max_time_s=int(args.max_time),
+                )
             if isinstance(result, dict):
                 # Attach stats so you can see if RAG helped.
                 result.setdefault("rag_stats", stats)
@@ -257,7 +280,10 @@ def main(argv: List[str]) -> int:
         parser.print_usage()
         return 2
 
-    proverb = args.proverb
+    proverb = " ".join(args.proverb).strip()
+    if not proverb:
+        parser.print_usage()
+        return 2
 
     if args.dry_run:
         clean = preprocess_text(sanitize_input(proverb))
@@ -268,7 +294,13 @@ def main(argv: List[str]) -> int:
         return 0
 
     # Full run
-    result = generate_reasoning(proverb, persist_directory=args.chroma_dir, collections=collections)
+    result = generate_reasoning(
+        proverb,
+        persist_directory=args.chroma_dir,
+        collections=collections,
+        max_new_tokens=int(args.max_new_tokens),
+        max_time_s=int(args.max_time),
+    )
     # Attach RAG stats (helpful for debugging / iterating on retrieval).
     try:
         clean = preprocess_text(sanitize_input(proverb))

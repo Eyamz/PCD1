@@ -143,6 +143,20 @@ CLI-only diagnostic key:
 - The tool will fall back to CPU if CUDA isn’t available.
 - On Windows, `bitsandbytes` is often unavailable; the loader supports it optionally.
 
+**Install CUDA-enabled PyTorch (Windows)**
+
+If `torch.cuda.is_available()` is `False`, you likely installed a CPU-only PyTorch wheel.
+
+In your project venv, reinstall PyTorch from the CUDA wheel index (example: CUDA 12.4):
+
+```powershell
+python -m pip uninstall -y torch
+python -m pip install --index-url https://download.pytorch.org/whl/cu124 torch
+python -c "import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else None)"
+```
+
+If you’re not sure which CUDA wheel index to use, check the official selector on https://pytorch.org.
+
 **ChromaDB returns 0 hits**
 - Confirm `data/chromadb` exists and contains your collections.
 - Try `--dry-run` to see what retrieval is returning.
