@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TuniSaid — Tunisian Proverbs</title>
+  <link href="homeTuniSaid.css" rel="stylesheet" />
+
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <span class="nav-logo" onclick="resetAll()">TuniSaid</span>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-badge fade-up">Tunisian Proverb Storyteller</div>
+    <h1 class="fade-up-2">TuniSaid</h1>
+    <p class="hero-sub fade-up-3">Discover the wisdom and stories behind Tunisian proverbs</p>
+    <div class="hero-actions fade-up-4">
+      <button class="btn-primary" id="btn-explore" onclick="openMode('explore')">Explore a Proverb</button>
+      <button class="btn-secondary" id="btn-enter" onclick="openMode('enter')">Enter a Proverb</button>
+    </div>
+  </section>
+
+  <!-- STEP 1 — INPUT SECTION -->
+  <div class="expand-section" id="input-section">
+
+    <!-- ── EXPLORE MODE ── -->
+  <div class="input-zone" id="explore-zone" style="display:none;">
+    <div class="input-zone-inner anim">
+      <span class="zone-label">Explore</span>
+      <h2 class="zone-title">Find a Tunisian Proverb</h2>
+ 
+      <!-- Search bar + Random button -->
+      <div class="explore-controls">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" id="search-input" type="text"
+            placeholder="Search by word… (e.g. القلب, الدار)"
+            oninput="filterProverbs()"/>
+        </div>
+        <button class="btn-random" onclick="pickRandom()">Surprise me</button>
+      </div>
+ 
+      <!-- Theme filters -->
+      <div class="themes-wrap">
+        <span class="themes-label">Filter by theme</span>
+        <div class="themes-row" id="themes-row"></div>
+      </div>
+ 
+      <!-- Count -->
+      <div class="results-count" id="results-count"></div>
+ 
+      <!-- Proverb list -->
+      <div class="proverb-list" id="proverb-list"></div>
+ 
+      <!-- Selected proverb preview -->
+      <div class="selected-preview" id="selected-preview">
+        <div class="selected-preview-arabic" id="preview-arabic"></div>
+        <div class="selected-preview-context" id="preview-context"></div>
+      </div>
+ 
+      <button class="btn-generate" id="explore-generate-btn"
+        onclick="generateStory()" disabled style="opacity:0.45;cursor:not-allowed;">
+        Generate Story
+      </button>
+    </div>
+  </div>
+
+    <!-- Enter mode -->
+    <div class="input-zone" id="enter-zone" style="display:none;">
+      <div class="input-zone-inner anim">
+        <span class="zone-label">Enter</span>
+        <h2 class="zone-title">Write Your Proverb</h2>
+        <textarea class="proverb-textarea" id="custom-input"
+          placeholder="اكتب المثل هنا… / Write a Tunisian proverb here…" oninput="onCustomInput()"></textarea>
+        <p class="input-hint">You can write in Arabic, Darja, or French.</p>
+        <button class="btn-generate" id="custom-btn" onclick="generateStory()" disabled
+          style="opacity:0.45;cursor:not-allowed;">
+          Generate Story
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STEP 2 — RESULTS SECTION -->
+  <div class="expand-section" id="results-section">
+    <div class="results-zone">
+      <div class="results-inner">
+
+        <!-- Loading -->
+        <div class="loading-bar" id="loading-bar" style="display:none;">
+          <div>
+            <div class="spinner"></div>
+          </div>
+          <div id="loading-text">Analyzing proverb…</div>
+        </div>
+
+        <!-- Result cards -->
+        <div class="results-grid" id="results-grid" style="display:none;">
+
+          <div class="result-card anim" style="animation-delay:0s">
+            <div class="result-card-header">🖼️ Generated Visual</div>
+            <div class="result-card-body">
+              <div class="img-box" id="img-box">🏛️</div>
+            </div>
+          </div>
+
+          <div class="result-card anim" style="animation-delay:0.12s">
+            <div class="result-card-header">📖 Cultural Story</div>
+            <div class="result-card-body">
+              <p class="story-text" id="story-text"></p>
+            </div>
+          </div>
+
+          <div class="result-card full anim" style="animation-delay:0.24s">
+            <div class="result-card-header">🎙️ Darja Audio Narration</div>
+            <div class="result-card-body">
+
+              <!-- Before generation -->
+              <div class="audio-gen-wrap" id="audio-gen-wrap">
+                <button class="btn-audio" onclick="generateAudio()">Generate Audio</button>
+                <p class="audio-gen-hint">Narration in Tunisian Darja — click to generate on demand</p>
+              </div>
+
+              <!-- Audio player (shown after generation) -->
+              <div id="audio-player-wrap" style="display:none;">
+                <div class="audio-player">
+                  <button class="play-btn" id="play-btn" onclick="togglePlay()">▶</button>
+                  <div class="audio-wave" id="audio-wave">
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">TuniSaid</div>
+    <div class="footer-copy">© 2025 · Tunisian Proverb Storyteller · Built with ❤️ in Tunisia</div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
