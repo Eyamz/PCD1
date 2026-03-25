@@ -1,0 +1,35 @@
+{
+  "system": {
+    "device": "cuda",
+    "enable_image_generation": false,
+    "enable_database_persistence": true
+  },
+  "models": {
+    "llm_model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    "embedding_model": "all-MiniLM-L6-v2",
+    "image_model": "stabilityai/stable-diffusion-xl-base-1.0"
+  },
+  "generation": {
+    "image_steps": 20,
+    "guidance_scale": 7.5,
+    "height": 512,
+    "width": 512,
+    "use_fp16": true,
+    "enable_memory_optimization": true
+  },
+  "rag": {
+    "top_k_retrieval": 3,
+    "similarity_threshold": 0.5
+  },
+  "database": {
+    "sqlite_path": "data/proverbs.db",
+    "chromadb_path": "data/chromadb",
+    "proverbs_json": "website/proverbs.json"
+  },
+  "api": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "debug": false,
+    "cors_origins": ["*"]
+  }
+}
