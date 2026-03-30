@@ -398,19 +398,13 @@ async function showCustomResults(customText) {
             isComplete = true;
             console.log("Custom generation complete!");
             
-            // Fetch the generated content
+            // USE the interpretation data directly from status (we added it to the response!)
             let generatedContent = null;
-            try {
-              // For custom input, try to get it from the task data
-              const contentData = status.result || {};
-              if (contentData.image_path || contentData.interpretation) {
-                generatedContent = {
-                  image_path: contentData.image_path,
-                  interpretation: { hidden_meaning: contentData.interpretation || '' }
-                };
-              }
-            } catch (e) {
-              console.warn("Could not fetch custom generated content details");
+            if (status.interpretation) {
+              generatedContent = {
+                image_path: status.image_path || "",
+                interpretation: status.interpretation  // Use FULL interpretation with narrative!
+              };
             }
             
             clearInterval(stepInterval);
@@ -451,51 +445,41 @@ async function showCustomResults(customText) {
 function showResults(proverb = null, content = null, customText = null) {
   let imageUrl = '', story = '', reasoning = '', narrative = '';
 
-  if (customText) {
-    // Custom input mode
-    imageUrl = '';
-    story = `This proverb — "${customText}" — carries deep roots in Tunisian oral tradition. ` +
-      `Passed down through generations in Darja, it encapsulates a lived truth about community, ` +
-      `patience, and the human condition. Its wisdom speaks across time.`;
-  } else if (proverb) {
-    // Explore mode - always show AI-generated interpretation
-    if (content && content.image_path) {
-      imageUrl = content.image_path;
-    } else if (proverb.generated_image) {
-      imageUrl = proverb.generated_image;
-    }
-
-    // Display full reasoning process from AI interpretation
-    if (content && content.interpretation) {
-      const interp = content.interpretation;
-      
-      // Build reasoning display
-      reasoning = `<div style="background:#f5f5f5; padding:15px; border-radius:8px; margin-bottom:15px;">
-        <h4 style="margin:0 0 10px; color:#333; font-size:0.95em;">🧠 AI Reasoning Process</h4>
-        <div style="font-size:0.9em; line-height:1.6;">
-          <p><strong>Literal Meaning:</strong> ${interp.literal_meaning || 'N/A'}</p>
-          <p><strong>Hidden Meaning:</strong> ${interp.hidden_meaning || 'N/A'}</p>
-          <p><strong>Moral Lesson:</strong> ${interp.moral || 'N/A'}</p>
-          ${interp.key_phrases && interp.key_phrases.length > 0 ? 
-            `<p><strong>Key Phrases:</strong> ${interp.key_phrases.join(', ')}</p>` : ''}
+  if (content && content.interpretation) {
+    // AI-generated content available (works for both explore and custom modes!)
+    const interp = content.interpretation;
+    
+    // Build reasoning display
+    reasoning = `<div style="background:#f5f5f5; padding:15px; border-radius:8px; margin-bottom:15px;">
+      <h4 style="margin:0 0 10px; color:#333; font-size:0.95em;">🧠 AI Reasoning Process</h4>
+      <div style="font-size:0.9em; line-height:1.6;">
+        <p><strong>Literal Meaning:</strong> ${interp.literal_meaning || 'N/A'}</p>
+        <p><strong>Hidden Meaning:</strong> ${interp.hidden_meaning || 'N/A'}</p>
+        <p><strong>Moral Lesson:</strong> ${interp.moral || 'N/A'}</p>
+        ${interp.key_phrases && interp.key_phrases.length > 0 ? 
+          `<p><strong>Key Phrases:</strong> ${interp.key_phrases.join(', ')}</p>` : ''}
+      </div>
+    </div>`;
+    
+    // Display the narrative story if available
+    if (interp.narrative) {
+      narrative = `<div style="background:#fffbf0; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #d4af37;">
+        <h4 style="margin:0 0 10px; color:#333; font-size:0.95em;">📖 Story Embodying the Lesson</h4>
+        <div style="font-size:0.9em; line-height:1.6; color:#333;">
+          ${interp.narrative.replace(/\n/g, '<br>')}
         </div>
       </div>`;
-      
-      // Display the narrative story if available
-      if (interp.narrative) {
-        narrative = `<div style="background:#fffbf0; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #d4af37;">
-          <h4 style="margin:0 0 10px; color:#333; font-size:0.95em;">📖 Story Embodying the Lesson</h4>
-          <div style="font-size:0.9em; line-height:1.6; color:#333;">
-            ${interp.narrative.replace(/\n/g, '<br>')}
-          </div>
-        </div>`;
-      }
-      
-      // Use ONLY AI-generated interpretation (no fallback to dataset!)
-      story = interp.hidden_meaning || "";
-    } else {
-      story = "Unable to generate interpretation. Please try again.";
     }
+    
+    // Use ONLY AI-generated interpretation (no fallback to dataset!)
+    story = interp.hidden_meaning || "";
+    
+    if (content.image_path) {
+      imageUrl = content.image_path;
+    }
+  } else {
+    // No AI content - show error message
+    story = "Unable to generate interpretation. Please try again.";
   }
 
   // Show image or fallback placeholder
