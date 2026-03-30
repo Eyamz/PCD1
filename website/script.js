@@ -355,11 +355,13 @@ async function showCustomResults(customText) {
     }, 500);
 
     // Trigger generation for custom input
+    const customText = document.getElementById('custom-input').value.trim();
     const genResponse = await fetch(`${API_BASE}/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         proverb_id: 'custom_' + Date.now(), 
+        custom_text: customText,
         force_regenerate: true
       })
     });
@@ -489,11 +491,10 @@ function showResults(proverb = null, content = null, customText = null) {
         </div>`;
       }
       
-      story = interp.hidden_meaning || proverb.proverb_arabic_explaination || 
-              `هذا المثل التونسي "${proverb.tunisan_proverb}" يحمل حكمة عميقة.`;
+      // Use ONLY AI-generated interpretation (no fallback to dataset!)
+      story = interp.hidden_meaning || "";
     } else {
-      story = proverb.proverb_arabic_explaination ||
-              `هذا المثل التونسي "${proverb.tunisan_proverb}" يحمل حكمة عميقة.`;
+      story = "Unable to generate interpretation. Please try again.";
     }
   }
 

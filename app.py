@@ -134,6 +134,7 @@ class ProverbResponse(BaseModel):
 class GenerationRequest(BaseModel):
     proverb_id: str
     force_regenerate: bool = False
+    custom_text: Optional[str] = None  # For custom input mode
 
 
 class SearchRequest(BaseModel):
@@ -203,9 +204,21 @@ async def get_generated_content(proverb_id: str):
 
 @app.post("/api/generate")
 async def generate_content(request: GenerationRequest, background_tasks: BackgroundTasks):
-    proverb = db.get_proverb(request.proverb_id)
-    if not proverb:
-        raise HTTPException(status_code=404, detail="Proverb not found")
+    # Get proverb text - from database for real proverbs, or from request for custom
+    proverb_text = None
+    
+    if request.custom_text:
+        # Custom input mode - use provided text
+        proverb_text = request.custom_text
+    else:
+        # Database mode - fetch from proverbs table
+        proverb = db.get_proverb(request.proverb_id)
+        if not proverb:
+            raise HTTPException(status_code=404, detail="Proverb not found")
+        proverb_text = proverb.get("tunisan_proverb", "")
+
+    if not proverb_text:
+        raise HTTPException(status_code=400, detail="No proverb text provided")
 
     if not pipeline:
         raise HTTPException(status_code=503, detail="Pipeline not initialized")
@@ -226,7 +239,7 @@ async def generate_content(request: GenerationRequest, background_tasks: Backgro
         _generate_background,
         task_id,
         request.proverb_id,
-        proverb["tunisan_proverb"],
+        proverb_text,
     )
 
     return {
@@ -330,6 +343,8 @@ async def _generate_background(task_id: str, proverb_id: str, proverb_text: str)
             "progress": 100,
             "content_id": content_id,
             "image_path": output.image_path or "",
+            "interpretation": output.interpretation.__dict__,  # Return the actual interpretation!
+            "result": output.interpretation.__dict__,  # For frontend compatibility
         }
         logger.info(f"Generation complete: {task_id}")
 
