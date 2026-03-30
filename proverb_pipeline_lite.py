@@ -218,6 +218,22 @@ def _extract_json(text: str) -> Optional[dict]:
     return None
 
 
+def _parse_pipe_separated(text: str) -> dict:
+    """Parse pipe-separated interpretation format"""
+    if not text:
+        return {}
+    
+    parts = text.split("||")
+    if len(parts) >= 4:
+        return {
+            "literal_meaning": parts[0].strip(),
+            "hidden_meaning": parts[1].strip(),
+            "moral": parts[2].strip(),
+            "key_phrases": [p.strip() for p in parts[3].split(",") if p.strip()]
+        }
+    return {}
+
+
 # ─────────────────────────────────────────────
 # LLM Interface  (FIX: better prompts + robust parsing)
 # ─────────────────────────────────────────────
@@ -270,19 +286,19 @@ class LLMInterface:
         )
         logger.info("Phi-2 loaded successfully")
 
-    def _generate(self, prompt: str, max_new_tokens: int = 300) -> str:
+    def _generate(self, prompt: str, max_new_tokens: int = 300, temperature: float = None) -> str:
         """Generate text — returns only the NEW tokens, not the prompt"""
         try:
             with torch.no_grad():
                 outputs = self.pipe(
                     prompt,
-                    max_new_tokens=max_new_tokens,   # FIX: use max_new_tokens not max_length
+                    max_new_tokens=max_new_tokens,
                     num_return_sequences=1,
-                    temperature=0.3,                  # lower = more deterministic JSON
-                    top_p=0.9,
+                    temperature=temperature or 0.3,
+                    top_p=0.95,
                     do_sample=True,
                     pad_token_id=self.tokenizer.eos_token_id,
-                    return_full_text=False,           # FIX: only return new tokens
+                    return_full_text=False,
                 )
             return outputs[0]["generated_text"].strip()
         except Exception as e:
@@ -291,29 +307,20 @@ class LLMInterface:
 
     def interpret_proverb(self, proverb_text: str, context: str = "") -> SemanticInterpretation:
         """Extract semantic meaning from proverb"""
-        context_block = f"\nRelated proverbs for context:\n{context}\n" if context else ""
-
-        # Better prompt format for chat models like TinyLlama
+        # Simplified prompt for TinyLlama
         prompt = (
-            f"<|im_start|>user\n"
-            f"Analyze this Tunisian proverb in depth. Return ONLY a JSON object with these fields:\n"
-            f"- literal_meaning: what the proverb literally says\n"
-            f"- hidden_meaning: the deeper metaphorical meaning\n"
-            f"- moral: the moral lesson or wisdom\n"
-            f"- key_phrases: list of key words (array)\n"
-            f"\n"
-            f"Proverb: {proverb_text}{context_block}\n"
-            f"\n"
-            f"Return ONLY the JSON, no markdown, no explanation.\n"
-            f"<|im_end|>\n"
-            f"<|im_start|>assistant\n"
-            f'{{"literal_meaning":'
+            f"Explain this proverb:\nProverb: {proverb_text}\n\n"
+            f"Give 4 parts separated by '||':\n"
+            f"1. Literal meaning (what it says)\n"
+            f"2. Hidden meaning (deeper message)\n"
+            f"3. Moral lesson (wisdom)\n"
+            f"4. Key words (comma-separated)\n\n"
+            f"Example format:\n"
+            f"farmers work hard || success requires effort || never give up || work,effort,success\n\nAnswer:"
         )
 
-        response = self._generate(prompt, max_new_tokens=300)
-        # Complete the JSON start
-        full_response = '{' + response
-        data = _extract_json(full_response)
+        response = self._generate(prompt, max_new_tokens=150)
+        data = _parse_pipe_separated(response)
 
         if data:
             return SemanticInterpretation(
@@ -323,65 +330,39 @@ class LLMInterface:
                 key_phrases=data.get("key_phrases", []) if isinstance(data.get("key_phrases"), list) else [],
             )
 
-        # FIX: graceful fallback — parse plain text if JSON fails
-        logger.warning(f"JSON parse failed for interpretation, using fallback. Response: {response[:200]}")
-        logger.info(f"Full response was: {full_response[:500]}")
+        # FIX: graceful fallback — split response if parsing fails
+        logger.warning(f"Interpretation parse failed. Response: {response[:150]}")
+        parts = response.split("||")
         return SemanticInterpretation(
-            literal_meaning=proverb_text,
-            hidden_meaning=response[:200] if response else "Unable to interpret",
-            moral="",
-            key_phrases=[],
+            literal_meaning=parts[0].strip() if len(parts) > 0 else proverb_text,
+            hidden_meaning=parts[1].strip() if len(parts) > 1 else response[:100],
+            moral=parts[2].strip() if len(parts) > 2 else "",
+            key_phrases=[p.strip() for p in parts[3].split(",") if len(parts) > 3 and p.strip()],
         )
 
     def generate_narrative(self, proverb_text: str, interpretation: SemanticInterpretation) -> str:
         """Generate a story that embodies the proverb's meaning"""
+        # Simplified prompt for fast story generation
         prompt = (
-            f"<|im_start|>user\n"
-            f"Write a short, meaningful story (2-3 paragraphs) that illustrates this Tunisian proverb and its wisdom:\n"
-            f"\nProverb: {proverb_text}\n"
-            f"Meaning: {interpretation.hidden_meaning}\n"
-            f"Moral Lesson: {interpretation.moral}\n"
-            f"\nCreate a simple story with characters and a scenario that shows how this lesson applies in real life.\n"
-            f"End with a brief explanation of how the story connects to the proverb's wisdom.\n"
-            f"<|im_end|>\n"
-            f"<|im_start|>assistant\n"
+            f"Write a short story (2-3 sentences) showing this lesson in real life:\n"
+            f"Lesson: {interpretation.moral or interpretation.hidden_meaning}\n"
+            f"Keywords: {', '.join(interpretation.key_phrases[:3]) if interpretation.key_phrases else 'wisdom'}\n\n"
+            f"Story:"
         )
         
-        narrative = self._generate(prompt, max_new_tokens=500)
+        # Use higher temperature for more creative narrative
+        narrative = self._generate(prompt, max_new_tokens=150, temperature=0.7)
         return narrative.strip() if narrative else "Unable to generate narrative"
 
     def generate_scene(self, interpretation: SemanticInterpretation) -> VisualScene:
-        """Generate visual scene description"""
-        prompt = (
-            "Instruct: Create a visual scene for this proverb meaning. "
-            "Reply with ONLY a JSON object — no explanation, no markdown.\n"
-            f"Meaning: {interpretation.hidden_meaning}\n"
-            f"Moral: {interpretation.moral}\n"
-            "JSON format:\n"
-            '{"subject":"...","setting":"...","action":"...","symbols":"...","mood":"...","style":"...","color_palette":"..."}\n'
-            "Output:"
-        )
-
-        response = self._generate(prompt, max_new_tokens=250)
-        data = _extract_json(response)
-
-        if data:
-            return VisualScene(
-                subject=str(data.get("subject", "")),
-                setting=str(data.get("setting", "")),
-                action=str(data.get("action", "")),
-                symbols=str(data.get("symbols", "")),
-                mood=str(data.get("mood", "")),
-                style=str(data.get("style", "digital art")),
-                color_palette=str(data.get("color_palette", "warm earth tones")),
-            )
-
-        logger.warning(f"JSON parse failed for scene, using fallback. Response: {response[:200]}")
+        """Generate visual scene description (skipped if image generation disabled)"""
+        # Return default scene since image generation is typically disabled
+        # This avoids costly LLM calls for non-essential visual descriptions
         return VisualScene(
             subject=interpretation.key_phrases[0] if interpretation.key_phrases else "figure",
             setting="Tunisian landscape",
-            action="standing",
-            symbols="",
+            action="reflecting",
+            symbols="proverb wisdom",
             mood="contemplative",
             style="digital art",
             color_palette="warm earth tones, ochre, terracotta",
