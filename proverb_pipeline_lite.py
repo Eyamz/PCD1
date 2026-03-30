@@ -305,21 +305,22 @@ class LLMInterface:
             logger.error(f"LLM generation failed: {e}")
             return ""
 
-    def interpret_proverb(self, proverb_text: str, context: str = "") -> SemanticInterpretation:
-        """Extract semantic meaning from proverb"""
-        # Simplified prompt for TinyLlama
+    def interpret_proverb(self, proverb_text: str) -> SemanticInterpretation:
+        """Extract semantic meaning from proverb - FORCES ORIGINAL AI THINKING"""
+        # Strong analytical prompt that forces genuine interpretation
         prompt = (
-            f"Explain this proverb:\nProverb: {proverb_text}\n\n"
-            f"Give 4 parts separated by '||':\n"
-            f"1. Literal meaning (what it says)\n"
-            f"2. Hidden meaning (deeper message)\n"
-            f"3. Moral lesson (wisdom)\n"
-            f"4. Key words (comma-separated)\n\n"
-            f"Example format:\n"
-            f"farmers work hard || success requires effort || never give up || work,effort,success\n\nAnswer:"
+            f"You are a wisdom teacher analyzing a Tunisian proverb. Think deeply about what it teaches.\n\n"
+            f"PROVERB: {proverb_text}\n\n"
+            f"ANALYZE THIS DEEPLY (NO COPYING - THINK ORIGINALLY):\n"
+            f"1. What is the surface story? (literal description)\n"
+            f"2. What does it REALLY teach about life? (hidden wisdom)\n"
+            f"3. What is the core moral principle? (universal truth)\n"
+            f"4. What are 3 key concepts? (core ideas)\n\n"
+            f"FORMAT YOUR ANSWER: answer1 || answer2 || answer3 || concept1, concept2, concept3\n\n"
+            f"Think carefully and give ORIGINAL insights, not dictionary definitions:\n"
         )
 
-        response = self._generate(prompt, max_new_tokens=150)
+        response = self._generate(prompt, max_new_tokens=150, temperature=0.5)
         data = _parse_pipe_separated(response)
 
         if data:
@@ -342,16 +343,23 @@ class LLMInterface:
 
     def generate_narrative(self, proverb_text: str, interpretation: SemanticInterpretation) -> str:
         """Generate a story that embodies the proverb's meaning"""
-        # Simplified prompt for fast story generation
+        # Analytical storytelling prompt
+        lesson = interpretation.moral or interpretation.hidden_meaning
+        keywords = ', '.join(interpretation.key_phrases[:3]) if interpretation.key_phrases else 'wisdom, life, lesson'
+        
         prompt = (
-            f"Write a short story (2-3 sentences) showing this lesson in real life:\n"
-            f"Lesson: {interpretation.moral or interpretation.hidden_meaning}\n"
-            f"Keywords: {', '.join(interpretation.key_phrases[:3]) if interpretation.key_phrases else 'wisdom'}\n\n"
-            f"Story:"
+            f"Create a REALISTIC story that teaches this lesson:\n"
+            f"LESSON: {lesson}\n\n"
+            f"KEY THEMES: {keywords}\n\n"
+            f"Write a true-to-life story (3-4 sentences) with:\n"
+            f"- A person facing a real situation\n"
+            f"- Their actions and choices\n"
+            f"- The consequence that teaches the lesson\n\n"
+            f"Make it SPECIFIC and REAL, not generic:\n"
         )
         
-        # Use higher temperature for more creative narrative
-        narrative = self._generate(prompt, max_new_tokens=150, temperature=0.7)
+        # Use moderate temperature for coherent but creative narrative
+        narrative = self._generate(prompt, max_new_tokens=180, temperature=0.65)
         return narrative.strip() if narrative else "Unable to generate narrative"
 
     def generate_scene(self, interpretation: SemanticInterpretation) -> VisualScene:
@@ -517,12 +525,12 @@ class ProverbPipeline:
         if proverb_id is None:
             proverb_id = f"proverb_{abs(hash(proverb_text))}"
 
-        # Step 1: Retrieve context from RAG
-        context = self.rag.retrieve_context(proverb_text)
+        # Step 1: DO NOT pass RAG context - it contaminates the AI output with dataset answers
+        # The LLM should generate ORIGINAL analysis, not copy similar proverbs
 
-        # Step 2: Interpret proverb with LLM
+        # Step 2: Interpret proverb with LLM (NO context passed - forces original thinking)
         logger.info("Interpreting proverb...")
-        interpretation = self.llm.interpret_proverb(proverb_text, context)
+        interpretation = self.llm.interpret_proverb(proverb_text)  # No context parameter
 
         # Step 2.5: Generate narrative story embodying the lesson
         logger.info("Generating narrative...")
