@@ -642,58 +642,69 @@ class PromptBuilder:
 # ─────────────────────────────────────────────
 
 class ImageGenerator:
-    """Image generation via Pollinations Flux API - No GPU required, superior quality to SDXL"""
-
-    API_ENDPOINT = "https://gen.pollinations.ai/image"
-    MODEL = "flux"  # flux, flux-realism, flux-3d (Flux is superior to SDXL)
+    """Image generation via Replicate free API - No expensive GPU needed"""
 
     def __init__(self, device: str = "cuda"):
-        """Initialize Pollinations client (device param kept for API compatibility)"""
-        logger.info(f"ImageGenerator using Pollinations Flux API (no GPU needed)")
+        """Initialize Replicate client (device param kept for API compatibility)"""
+        logger.info("ImageGenerator using Replicate free API (SDXL 1.0)")
 
     def generate(self, prompt: str, negative_prompt: str = "", steps: int = 20) -> str:
-        """Generate image via Pollinations Flux API
+        """Generate image via Replicate API (free tier)
         
         Args:
             prompt: Image description
-            negative_prompt: Ignored (Flux doesn't use it)
-            steps: Ignored (Flux uses fixed optimal steps)
+            negative_prompt: Unwanted elements
+            steps: Number of inference steps (20-50, default 30)
             
         Returns:
             Path to saved image, or empty string on failure
         """
         try:
-            import requests
-            from urllib.parse import quote
+            import replicate
             
-            # URL encode the prompt
-            encoded_prompt = quote(prompt)
+            logger.info(f"Generating image via Replicate: {prompt[:50]}...")
             
-            # Build API URL with parameters
-            url = f"{self.API_ENDPOINT}/{encoded_prompt}?model={self.MODEL}&width=768&height=768&nologo=true"
+            # Use SDXL 1.0 model (free tier supported, ~60 seconds per image)
+            # This is the fastest stable diffusion model available free
+            model_version = "39ed52f2a60c3b53014e7ff81db6c5d7470ecd05"  # SDXL 1.0
             
-            logger.info(f"Fetching Flux image: {prompt[:50]}...")
+            output = replicate.run(
+                f"stability-ai/sdxl:{model_version}",
+                input={
+                    "prompt": prompt,
+                    "negative_prompt": negative_prompt or "blurry, low quality",
+                    "num_inference_steps": min(max(steps, 20), 50),
+                    "guidance_scale": 7.5,
+                    "width": 768,
+                    "height": 768,
+                    "scheduler": "euler"  # Faster scheduler
+                }
+            )
             
-            # Call Pollinations Flux API
-            response = requests.get(url, timeout=60)
-            response.raise_for_status()
+            if output and len(output) > 0:
+                image_url = output[0]
+                
+                # Download the image
+                import requests
+                response = requests.get(image_url, timeout=30)
+                
+                if response.status_code == 200:
+                    # Save locally
+                    output_dir = Path("website/generated")
+                    output_dir.mkdir(parents=True, exist_ok=True)
+                    image_path = output_dir / f"generated_{datetime.now().timestamp():.0f}.jpg"
+                    
+                    with open(image_path, "wb") as f:
+                        f.write(response.content)
+                    
+                    logger.info(f"Image saved: {image_path}")
+                    return str(image_path)
             
-            # Save image to generated folder
-            output_dir = Path("website/generated")
-            output_dir.mkdir(parents=True, exist_ok=True)
-            image_path = output_dir / f"generated_{datetime.now().timestamp():.0f}.jpg"
-            
-            with open(image_path, "wb") as f:
-                f.write(response.content)
-            
-            logger.info(f"Image saved via Flux: {image_path}")
-            return str(image_path)
-            
-        except requests.exceptions.Timeout:
-            logger.error("Pollinations API timeout - image generation took too long")
+            logger.error("Replicate API returned empty output")
             return ""
-        except requests.exceptions.ConnectionError:
-            logger.error("Failed to connect to Pollinations API - check internet connection")
+            
+        except ImportError:
+            logger.error("replicate not installed. Install with: pip install replicate")
             return ""
         except Exception as e:
             logger.error(f"Image generation failed: {e}")
