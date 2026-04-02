@@ -1,7 +1,7 @@
 {
   "system": {
     "device": "cuda",
-    "enable_image_generation": false,
+    "enable_image_generation": true,
     "enable_database_persistence": true
   },
   "models": {
