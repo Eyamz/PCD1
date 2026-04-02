@@ -1,20 +1,20 @@
 """
 Optimized Tunisian Proverb Pipeline - Lite Version
-Uses Groq API for semantic interpretation and narrative generation
+Uses Groq API for semantic interpretation and Pollinations Flux for image generation
 
 FEATURES:
 - ChromaDB with modern PersistentClient API for semantic search
-- Google Gemini API for lightweight, free LLM generation
+- Groq API for lightweight, free LLM generation (semantic interpretation)
+- Pollinations Flux API for superior image generation (better than SDXL)
 - RAG initialized with 999 proverbs on startup
 - Robust JSON parsing with fallback strategies
-- SDXL image generation with memory optimization for 4GB VRAM
-- Device auto-detection (falls back to CPU if CUDA unavailable)
+- No GPU required - all text and image generation via free APIs
+- Zero VRAM usage (pure API calls)
 - All components degrade gracefully instead of crashing
 """
 
 import json
 import re
-import torch
 import os
 import requests
 from typing import Optional, Dict, List
@@ -31,10 +31,6 @@ load_dotenv()
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline as hf_pipeline
 from sentence_transformers import SentenceTransformer
 import chromadb
-
-# Image Generation
-from diffusers import StableDiffusionXLPipeline
-import gc
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -490,113 +486,214 @@ class LLMInterface:
         return narrative
 
     def generate_scene(self, interpretation: SemanticInterpretation) -> VisualScene:
-        """Generate visual scene description (skipped if image generation disabled)"""
-        # Return default scene since image generation is typically disabled
-        # This avoids costly LLM calls for non-essential visual descriptions
+        """Generate visual scene description using Groq's semantic interpretation"""
+        # Extract rich visual concepts from Groq's interpretation
+        hidden_meaning = interpretation.hidden_meaning.lower()
+        moral = interpretation.moral.lower()
+        narrative = interpretation.narrative.lower()
+        
+        # Intelligently determine mood based on moral and hidden meaning
+        mood = self._extract_mood(hidden_meaning, moral)
+        
+        # Extract symbols from key phrases (up to 3)
+        symbols = ", ".join(interpretation.key_phrases[:3]) if interpretation.key_phrases else "wisdom"
+        
+        # Determine action based on the moral lesson
+        action = self._extract_action(moral, interpretation.key_phrases)
+        
+        # Determine Tunisian setting from narrative context
+        setting = self._extract_setting(narrative)
+        
+        # Create color palette that matches the mood and meaning
+        color_palette = self._extract_colors(mood, hidden_meaning)
+        
         return VisualScene(
             subject=interpretation.key_phrases[0] if interpretation.key_phrases else "figure",
-            setting="Tunisian landscape",
-            action="reflecting",
-            symbols="proverb wisdom",
-            mood="contemplative",
-            style="digital art",
-            color_palette="warm earth tones, ochre, terracotta",
+            setting=setting,
+            action=action,
+            symbols=symbols,
+            mood=mood,
+            style="digital art, Tunisian cultural heritage",
+            color_palette=color_palette,
         )
+    
+    def _extract_mood(self, hidden_meaning: str, moral: str) -> str:
+        """Extract mood based on semantic content from Groq interpretation"""
+        mood_keywords = {
+            "contemplative": ["reflect", "wisdom", "sacred", "inner truth", "understand", "profound"],
+            "dramatic": ["struggle", "conflict", "danger", "battle", "overcome", "challenge"],
+            "serene": ["peace", "calm", "harmony", "balance", "gentle", "tranquil"],
+            "mysterious": ["hidden", "secret", "unknown", "veil", "shadow", "concealed"],
+            "hopeful": ["light", "joy", "victory", "success", "growth", "rise", "triumph"],
+            "melancholic": ["loss", "sorrow", "fading", "past", "memory", "bygone", "regret"],
+            "wise": ["ancient", "timeless", "eternal", "profound", "essence", "truth"],
+        }
+        
+        combined = hidden_meaning + " " + moral
+        for mood, keywords in mood_keywords.items():
+            if any(keyword in combined for keyword in keywords):
+                return mood
+        return "contemplative"
+    
+    def _extract_action(self, moral: str, key_phrases: List[str]) -> str:
+        """Extract main action based on the moral lesson"""
+        action_keywords = {
+            "reflecting": ["reflect", "think", "wisdom", "understand", "meditate"],
+            "climbing": ["rise", "ascend", "climb", "progress", "reach"],
+            "building": ["build", "create", "construct", "make", "establish"],
+            "protecting": ["guard", "protect", "defend", "preserve", "shield"],
+            "sharing": ["share", "give", "teach", "help", "pass"],
+            "searching": ["seek", "find", "discover", "quest", "search"],
+            "balancing": ["balance", "harmony", "equilibrium", "weigh"],
+            "flourishing": ["flourish", "bloom", "grow", "prosper", "thrive"],
+        }
+        
+        for action, keywords in action_keywords.items():
+            if any(keyword in moral for keyword in keywords):
+                return action
+        return "reflecting"
+    
+    def _extract_setting(self, narrative: str) -> str:
+        """Extract Tunisian setting from narrative context"""
+        setting_keywords = {
+            "ancient Tunisian desert": ["desert", "sand", "caravan", "oasis", "dune"],
+            "Tunisian marketplace": ["market", "souk", "trade", "merchant", "bazaar"],
+            "traditional Tunisian home": ["home", "family", "hearth", "village", "house"],
+            "coastal setting": ["sea", "coast", "water", "shore", "island"],
+            "mountain setting": ["mountain", "peak", "ridge", "height", "valley"],
+            "olive grove": ["olive", "grove", "tree", "orchard"],
+            "casbah": ["casbah", "medina", "old town", "fortress"],
+        }
+        
+        for setting, keywords in setting_keywords.items():
+            if any(keyword in narrative for keyword in keywords):
+                return setting
+        return "Tunisian landscape"
+    
+    def _extract_colors(self, mood: str, hidden_meaning: str) -> str:
+        """Extract color palette based on mood and semantic meaning"""
+        color_palettes = {
+            "contemplative": "warm earth tones, ochre, deep blue, terracotta, gold accents",
+            "dramatic": "deep reds, blacks, golds, crimson, contrasting shadows",
+            "serene": "soft pastels, light blues, cream, gentle greens, whites",
+            "mysterious": "deep purples, blacks, silver accents, dark indigo, midnight blue",
+            "hopeful": "bright golds, warm yellows, sunrise colors, clear blue",
+            "melancholic": "muted tones, grays, soft browns, faded reds, sepia",
+            "wise": "ancient golds, rich browns, deep purples, timeless earth tones",
+        }
+        return color_palettes.get(mood, "warm earth tones, ochre, terracotta")
 
 
 # ─────────────────────────────────────────────
-# Prompt Builder
+# Prompt Builder - Now optimized for Flux with semantic richness
 # ─────────────────────────────────────────────
 
 class PromptBuilder:
-    """Build optimized SDXL prompts"""
+    """Build rich, semantically-grounded prompts for Pollinations Flux API"""
 
     @staticmethod
     def build_prompt(scene: VisualScene) -> str:
+        """Build Flux-optimized prompt incorporating semantic interpretation"""
+        # Core visual elements
         elements = [
             scene.subject,
-            scene.action,
             f"in {scene.setting}" if scene.setting else "",
+            f"{scene.action}" if scene.action else "",
             scene.symbols,
+        ]
+        
+        # Add mood and atmosphere
+        atmosphere = [
             f"{scene.mood} mood" if scene.mood else "",
             scene.style,
             scene.color_palette,
         ]
-        prompt = ", ".join(e for e in elements if e.strip())
-        quality = "masterpiece, best quality, highly detailed, professional, cinematic lighting"
-        return f"{prompt}, {quality}"
+        
+        # Combine all elements
+        core_prompt = ", ".join(e for e in elements if e.strip())
+        atmosphere_prompt = ", ".join(e for e in atmosphere if e.strip())
+        
+        # Quality and style enhancement
+        quality = "masterpiece, best quality, highly detailed, professional rendering, cinematic lighting, rich colors, cultural authenticity, 8k resolution"
+        
+        # Build final prompt with semantic richness
+        final_prompt = f"{core_prompt}, {atmosphere_prompt}, {quality}"
+        
+        # Clean up and remove duplicates
+        words = final_prompt.split(", ")
+        seen = set()
+        unique_words = []
+        for word in words:
+            word_lower = word.lower().strip()
+            if word_lower and word_lower not in seen:
+                unique_words.append(word)
+                seen.add(word_lower)
+        
+        return ", ".join(unique_words)
 
     @staticmethod
     def build_negative_prompt() -> str:
-        return (
-            "blurry, low quality, distorted, ugly, bad anatomy, "
-            "watermark, text, signature, nsfw, violence"
-        )
+        """Flux is intelligent enough to handle negative concepts implicitly"""
+        return ""
 
 
 # ─────────────────────────────────────────────
-# Image Generator  (FIX: memory-safe for RTX 2050)
+# Image Generator - Pollinations Flux API
 # ─────────────────────────────────────────────
 
 class ImageGenerator:
-    """SDXL-based image generation with memory optimization for 4GB VRAM"""
+    """Image generation via Pollinations Flux API - No GPU required, superior quality to SDXL"""
+
+    API_ENDPOINT = "https://gen.pollinations.ai/image"
+    MODEL = "flux"  # flux, flux-realism, flux-3d (Flux is superior to SDXL)
 
     def __init__(self, device: str = "cuda"):
-        if device == "cuda" and not torch.cuda.is_available():
-            logger.warning("CUDA not available for image generation")
-            device = "cpu"
-        self.device = device
-
-        logger.info("Loading SDXL pipeline...")
-        self.pipe = StableDiffusionXLPipeline.from_pretrained(
-            "stabilityai/stable-diffusion-xl-base-1.0",
-            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-            use_safetensors=True,
-            variant="fp16" if device == "cuda" else None,
-        )
-
-        # FIX: do NOT use device_map with sequential_cpu_offload — they conflict
-        # Use sequential CPU offload alone; it handles device placement itself
-        if device == "cuda":
-            self.pipe.enable_sequential_cpu_offload()  # saves VRAM by offloading layers
-            self.pipe.enable_attention_slicing(1)       # reduces peak VRAM per step
-        else:
-            self.pipe = self.pipe.to("cpu")
-
-        logger.info("SDXL loaded successfully")
+        """Initialize Pollinations client (device param kept for API compatibility)"""
+        logger.info(f"ImageGenerator using Pollinations Flux API (no GPU needed)")
 
     def generate(self, prompt: str, negative_prompt: str = "", steps: int = 20) -> str:
-        """Generate image optimized for RTX 2050 (4GB VRAM)"""
+        """Generate image via Pollinations Flux API
+        
+        Args:
+            prompt: Image description
+            negative_prompt: Ignored (Flux doesn't use it)
+            steps: Ignored (Flux uses fixed optimal steps)
+            
+        Returns:
+            Path to saved image, or empty string on failure
+        """
         try:
-            # FIX: autocast only valid on CUDA
-            ctx = torch.cuda.amp.autocast() if self.device == "cuda" else torch.no_grad()
-            with torch.no_grad(), ctx:
-                image = self.pipe(
-                    prompt=prompt,
-                    negative_prompt=negative_prompt,
-                    num_inference_steps=steps,   # reduced from 25 → 20 for VRAM safety
-                    guidance_scale=7.5,
-                    height=512,
-                    width=512,
-                ).images[0]
-
+            import requests
+            from urllib.parse import quote
+            
+            # URL encode the prompt
+            encoded_prompt = quote(prompt)
+            
+            # Build API URL with parameters
+            url = f"{self.API_ENDPOINT}/{encoded_prompt}?model={self.MODEL}&width=768&height=768&nologo=true"
+            
+            logger.info(f"Fetching Flux image: {prompt[:50]}...")
+            
+            # Call Pollinations Flux API
+            response = requests.get(url, timeout=60)
+            response.raise_for_status()
+            
+            # Save image to generated folder
             output_dir = Path("website/generated")
             output_dir.mkdir(parents=True, exist_ok=True)
-            image_path = output_dir / f"generated_{datetime.now().timestamp():.0f}.png"
-            image.save(image_path)
-
-            # Free VRAM after generation
-            gc.collect()
-            if self.device == "cuda":
-                torch.cuda.empty_cache()
-
-            logger.info(f"Image saved: {image_path}")
+            image_path = output_dir / f"generated_{datetime.now().timestamp():.0f}.jpg"
+            
+            with open(image_path, "wb") as f:
+                f.write(response.content)
+            
+            logger.info(f"Image saved via Flux: {image_path}")
             return str(image_path)
-
-        except torch.cuda.OutOfMemoryError:
-            logger.error("CUDA OOM during image generation — try reducing steps or image size")
-            gc.collect()
-            torch.cuda.empty_cache()
+            
+        except requests.exceptions.Timeout:
+            logger.error("Pollinations API timeout - image generation took too long")
+            return ""
+        except requests.exceptions.ConnectionError:
+            logger.error("Failed to connect to Pollinations API - check internet connection")
             return ""
         except Exception as e:
             logger.error(f"Image generation failed: {e}")
