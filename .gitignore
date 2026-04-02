@@ -25,3 +25,19 @@ data/pdfs/
 
 # Logs
 logs/
+
+# Environment and secrets
+.env
+.env.local
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated/cached data
+faiss_vectorstore_proverbs/
+
+# Testing and debug files
+test_*.py
+debug_*.py
+server.log
+*.log

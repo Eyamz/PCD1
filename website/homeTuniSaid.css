@@ -592,6 +592,60 @@ nav {
     line-height: 1.9;
 }
 
+.rag-explanation-text {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-weight: 300;
+    line-height: 1.9;
+}
+
+.rag-explanation-text p {
+    margin-bottom: 1rem;
+}
+
+.rag-explanation-text p:last-child {
+    margin-bottom: 0;
+}
+
+/* Enhanced formatting for structured explanations */
+.rag-explanation-text h3 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    color: #d4af37;
+    font-size: 1.1em;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    padding-bottom: 0.4em;
+}
+
+.rag-explanation-text h4 {
+    margin-top: 1em;
+    margin-bottom: 0.3em;
+    color: #e8c547;
+    font-size: 1em;
+    font-weight: 600;
+}
+
+.rag-explanation-text strong {
+    color: #fff;
+    font-weight: 600;
+}
+
+.rag-explanation-text ul {
+    margin: 0.8em 0;
+    padding-left: 1.5em;
+}
+
+.rag-explanation-text li {
+    margin: 0.4em 0;
+    color: var(--text-muted);
+}
+
+.rag-explanation-text li::marker {
+    color: #d4af37;
+    font-weight: 600;
+}
+
 .audio-gen-wrap {
     text-align: center;
     padding: 0.5rem 0;

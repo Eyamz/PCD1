@@ -63,7 +63,22 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning(f"Proverbs JSON not found: {proverbs_json}")
 
-    # Initialize AI pipeline
+    # Initialize OpenRouter RAG pipeline
+    try:
+        logger.info("\n" + "=" * 55)
+        logger.info("Initializing OpenRouter RAG Pipeline")
+        logger.info("=" * 55)
+        
+        from rag_openrouter_pipeline import initialize_pipeline as init_rag
+        init_rag(proverbs_path=proverbs_json)
+        
+        logger.info("✅ OpenRouter RAG pipeline ready for /api/explain requests")
+        logger.info("=" * 55 + "\n")
+    except Exception as e:
+        logger.error(f"⚠️  RAG pipeline initialization warning: {e}")
+        logger.info("OpenRouter /api/explain endpoint will fail - make sure OPENROUTER_API_KEY is set")
+
+    # Initialize image generation pipeline (optional)
     try:
         with open("config.json") as f:
             config = json.load(f)
@@ -71,7 +86,7 @@ async def lifespan(app: FastAPI):
         device = config.get("system", {}).get("device", "cuda")
         enable_gen = config.get("system", {}).get("enable_image_generation", False)
 
-        logger.info(f"Initializing pipeline (device={device}, image_gen={enable_gen})...")
+        logger.info(f"Initializing image generation pipeline (device={device}, image_gen={enable_gen})...")
 
         # FIX: pass proverbs_json so pipeline populates ChromaDB
         pipeline = ProverbPipeline(
@@ -79,10 +94,10 @@ async def lifespan(app: FastAPI):
             enable_generation=enable_gen,
             proverbs_json=proverbs_json,
         )
-        logger.info("Pipeline ready")
+        logger.info("✅ Image generation pipeline ready")
 
     except Exception as e:
-        logger.error(f"Pipeline initialization failed: {e}", exc_info=True)
+        logger.error(f"⚠️  Image generation pipeline initialization warning: {e}")
         pipeline = None
 
     yield  # app is running
@@ -140,6 +155,10 @@ class GenerationRequest(BaseModel):
 class SearchRequest(BaseModel):
     query: str
     limit: int = 10
+
+
+class ExplainRequest(BaseModel):
+    proverb_text: str
 
 
 # ─────────────────────────────────────────────
@@ -204,18 +223,21 @@ async def get_generated_content(proverb_id: str):
 
 @app.post("/api/generate")
 async def generate_content(request: GenerationRequest, background_tasks: BackgroundTasks):
-    # Get proverb text - from database for real proverbs, or from request for custom
+    # Get proverb text and explanation - from database for real proverbs, or from request for custom
     proverb_text = None
+    explanation = None
     
     if request.custom_text:
         # Custom input mode - use provided text
         proverb_text = request.custom_text
+        explanation = None
     else:
         # Database mode - fetch from proverbs table
         proverb = db.get_proverb(request.proverb_id)
         if not proverb:
             raise HTTPException(status_code=404, detail="Proverb not found")
         proverb_text = proverb.get("tunisan_proverb", "")
+        explanation = proverb.get("proverb_arabic_explaination", "")  # Pass the explanation!
 
     if not proverb_text:
         raise HTTPException(status_code=400, detail="No proverb text provided")
@@ -240,6 +262,7 @@ async def generate_content(request: GenerationRequest, background_tasks: Backgro
         task_id,
         request.proverb_id,
         proverb_text,
+        explanation,  # Pass explanation to background task
     )
 
     return {
@@ -258,6 +281,39 @@ async def get_generation_status(task_id: str):
     if status.get("status") == "complete" and status.get("image_path"):
         status["image_url"] = _fs_to_url(status["image_path"])
     return status
+
+
+@app.post("/api/explain")
+async def explain_proverb(request: ExplainRequest):
+    """
+    Generate a detailed explanation for a proverb using OpenRouter RAG pipeline.
+    
+    Uses local FAISS for semantic search to find related proverbs, then uses
+    OpenRouter + Qwen to generate a comprehensive explanation with cultural,
+    linguistic, and historical context.
+    """
+    try:
+        # Import here to avoid loading models on startup
+        from rag_openrouter_pipeline import generate_explanation
+        
+        proverb_text = request.proverb_text.strip()
+        if not proverb_text:
+            raise HTTPException(status_code=400, detail="Proverb text is required")
+        
+        logger.info(f"Generating RAG explanation for: {proverb_text[:50]}")
+        
+        # Generate explanation using OpenRouter + Qwen (5-10 seconds)
+        explanation = generate_explanation(proverb_text, max_tokens=512)
+        
+        return {
+            "proverb": proverb_text,
+            "explanation": explanation,
+            "source": "openrouter_qwen_rag",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Explanation generation error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to generate explanation: {str(e)}")
 
 
 @app.post("/api/search")
@@ -307,7 +363,7 @@ def _fs_to_url(fs_path: str) -> str:
     return "/" + str(p)
 
 
-async def _generate_background(task_id: str, proverb_id: str, proverb_text: str):
+async def _generate_background(task_id: str, proverb_id: str, proverb_text: str, explanation: str = None):
     """
     Async wrapper around the blocking pipeline.process() call.
     FIX: runs the CPU/GPU-bound work in a thread executor so it doesn't
@@ -317,21 +373,28 @@ async def _generate_background(task_id: str, proverb_id: str, proverb_text: str)
     try:
         generation_status[task_id] = {"status": "interpreting", "progress": 20}
 
+        # Create a wrapper function to call pipeline.process with explanation
+        def _process_wrapper():
+            return pipeline.process(proverb_text, proverb_id, explanation=explanation)
+
         # Run blocking pipeline in thread pool
         output: GeneratedOutput = await loop.run_in_executor(
             executor,
-            pipeline.process,
-            proverb_text,
-            proverb_id,
+            _process_wrapper
         )
 
         generation_status[task_id] = {"status": "saving", "progress": 80}
 
         content_id = f"content_{uuid.uuid4().hex[:8]}"
+        
+        # Build expanded interpretation data with RAG context
+        interpretation_data = output.interpretation.__dict__.copy()
+        interpretation_data["rag_context"] = output.rag_context or []
+        
         db.save_generated_content(
             content_id=content_id,
             proverb_id=proverb_id,
-            interpretation=output.interpretation.__dict__,
+            interpretation=interpretation_data,
             scene=output.scene.__dict__ if output.scene else {},
             prompt=output.generated_prompt or "",
             image_path=output.image_path or "",
@@ -343,8 +406,9 @@ async def _generate_background(task_id: str, proverb_id: str, proverb_text: str)
             "progress": 100,
             "content_id": content_id,
             "image_path": output.image_path or "",
-            "interpretation": output.interpretation.__dict__,  # Return the actual interpretation!
-            "result": output.interpretation.__dict__,  # For frontend compatibility
+            "interpretation": interpretation_data,  # Include RAG context here
+            "result": interpretation_data,  # For frontend compatibility
+            "rag_context": output.rag_context or [],  # Explicitly include RAG context
         }
         logger.info(f"Generation complete: {task_id}")
 

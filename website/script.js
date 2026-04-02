@@ -1,23 +1,46 @@
-loadProverbs();
 let PROVERBS = [];
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = "http://localhost:8888/api";
 
 async function loadProverbs() {
   try {
-    // Try API first, fallback to local JSON
-    const response = await fetch(`${API_BASE}/proverbs?limit=500`);
+    console.log("Attempting to load proverbs from API...");
+    const response = await fetch(`${API_BASE}/proverbs?limit=500`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    console.log(`API response status: ${response.status}`);
+    
     if (response.ok) {
       PROVERBS = await response.json();
-      console.log(`Loaded ${PROVERBS.length} proverbs from API`);
+      console.log(`✓ Loaded ${PROVERBS.length} proverbs from API`);
+      return;
     } else {
-      throw new Error("API failed");
+      console.warn(`API returned status ${response.status}, falling back to local JSON`);
+      throw new Error(`API failed with status ${response.status}`);
     }
   } catch (error) {
-    console.warn("API unavailable, using local proverbs.json");
-    const response = await fetch("proverbs.json");
-    PROVERBS = await response.json();
+    console.warn(`API unavailable (${error.message}), using local proverbs.json`);
+    try {
+      const response = await fetch("proverbs.json");
+      if (response.ok) {
+        PROVERBS = await response.json();
+        console.log(`✓ Loaded ${PROVERBS.length} proverbs from local JSON`);
+      } else {
+        console.error("Failed to load local proverbs.json");
+      }
+    } catch (e) {
+      console.error("Error loading local proverbs:", e);
+    }
   }
   filteredList = [...PROVERBS];
+}
+
+// Load proverbs when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadProverbs);
+} else {
+  loadProverbs();
 }
  
 /* ── 20 contexts from your dataset ── */
@@ -263,7 +286,7 @@ async function generateOrFetchContent(proverb) {
         // Poll for generation completion
         let isComplete = false;
         let attempts = 0;
-        const maxAttempts = 300; // 5 minutes with 1s polling
+        const maxAttempts = 600; // 10 minutes with 1s polling (for CPU inference)
         
         while (!isComplete && attempts < maxAttempts) {
           attempts++;
@@ -278,24 +301,25 @@ async function generateOrFetchContent(proverb) {
               isComplete = true;
               console.log("Generation complete!");
               
-              // Fetch the generated content
-              const contentResponse = await fetch(`${API_BASE}/proverbs/${proverb_id}/generated`);
-              if (contentResponse.ok) {
-                content = await contentResponse.json();
-                clearInterval(stepInterval);
-                clearInterval(timerInterval);
-                showResults(proverb, content);
-              } else {
-                clearInterval(stepInterval);
-                clearInterval(timerInterval);
-                showResults(proverb, null);
+              // Use the status response directly - it already has interpretation + rag_context
+              let generatedContent = null;
+              if (status.interpretation) {
+                generatedContent = {
+                  image_path: status.image_path || "",
+                  interpretation: status.interpretation,
+                  rag_context: status.rag_context || []
+                };
               }
+              
+              clearInterval(stepInterval);
+              clearInterval(timerInterval);
+              showResults(proverb, generatedContent, null);
               return;
             } else if (status.status === 'failed') {
               console.error("Generation failed:", status.error);
               clearInterval(stepInterval);
               clearInterval(timerInterval);
-              showResults(proverb, null);
+              showResults(proverb, null, null);
               return;
             }
           }
@@ -383,7 +407,7 @@ async function showCustomResults(customText) {
       // Poll for generation completion
       let isComplete = false;
       let attempts = 0;
-      const maxAttempts = 300; // 5 minutes with 1s polling
+      const maxAttempts = 600; // 10 minutes with 1s polling (for CPU inference)
       
       while (!isComplete && attempts < maxAttempts) {
         attempts++;
@@ -403,7 +427,8 @@ async function showCustomResults(customText) {
             if (status.interpretation) {
               generatedContent = {
                 image_path: status.image_path || "",
-                interpretation: status.interpretation  // Use FULL interpretation with narrative!
+                interpretation: status.interpretation,  // Use FULL interpretation with narrative!
+                rag_context: status.rag_context || []  // Include RAG context
               };
             }
             
@@ -443,7 +468,7 @@ async function showCustomResults(customText) {
 }
 
 function showResults(proverb = null, content = null, customText = null) {
-  let imageUrl = '', story = '', reasoning = '', narrative = '';
+  let imageUrl = '', story = '', reasoning = '', narrative = '', ragContext = '';
 
   if (content && content.interpretation) {
     // AI-generated content available (works for both explore and custom modes!)
@@ -467,6 +492,25 @@ function showResults(proverb = null, content = null, customText = null) {
         <h4 style="margin:0 0 10px; color:#333; font-size:0.95em;">📖 Story Embodying the Lesson</h4>
         <div style="font-size:0.9em; line-height:1.6; color:#333;">
           ${interp.narrative.replace(/\n/g, '<br>')}
+        </div>
+      </div>`;
+    }
+    
+    // Display RAG context - similar proverbs for cultural grounding
+    if (content.rag_context && content.rag_context.length > 0) {
+      const ragItems = content.rag_context.map((item, idx) => `
+        <div style="background:#f0f8ff; padding:10px; border-radius:6px; margin-bottom:8px; border-left:3px solid #4097c4;">
+          <p style="margin:0 0 5px; font-weight:bold; color:#333; font-size:0.9em;">Similar Proverb ${idx + 1}</p>
+          <p style="margin:0 0 5px; color:#555; font-size:0.85em;"><em>"${item.proverb || 'N/A'}"</em></p>
+          ${item.context ? `<p style="margin:0 0 5px; color:#666; font-size:0.85em;"><strong>Context:</strong> ${item.context}</p>` : ''}
+          ${item.explanation ? `<p style="margin:0; color:#666; font-size:0.85em;"><strong>Explanation:</strong> ${item.explanation}</p>` : ''}
+        </div>
+      `).join('');
+      
+      ragContext = `<div style="background:#f0f8ff; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #4097c4;">
+        <h4 style="margin:0 0 10px; color:#333; font-size:0.95em;">🔍 Cultural Context - Similar Proverbs</h4>
+        <div style="font-size:0.9em; line-height:1.6;">
+          ${ragItems}
         </div>
       </div>`;
     }
@@ -498,14 +542,93 @@ function showResults(proverb = null, content = null, customText = null) {
   let fullContent = '';
   if (reasoning) fullContent += reasoning;
   if (narrative) fullContent += narrative;
+  if (ragContext) fullContent += ragContext;
   if (fullContent) {
     storyEl.innerHTML = fullContent + `<p style="margin:0;">${story}</p>`;
   } else {
     storyEl.textContent = story;
   }
+
+  // Fetch and display RAG Groq explanation
+  // This automatically fetches an AI-generated explanation if a proverb was selected
+  const proverbText = proverb?.tunisan_proverb || customText;
+  if (proverbText) {
+    fetchAndDisplayRAGExplanation(proverbText);
+  }
   
   document.getElementById('loading-bar').style.display  = 'none';
   document.getElementById('results-grid').style.display = 'grid';
+}
+
+/* ════ FETCH AND DISPLAY RAG EXPLANATION ════ */
+async function fetchAndDisplayRAGExplanation(proverbText) {
+  try {
+    console.log("Fetching RAG explanation for:", proverbText);
+    
+    const response = await fetch(`${API_BASE}/explain`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proverb_text: proverbText })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      displayRAGExplanation(data.explanation);
+    } else {
+      console.warn("RAG explanation request failed:", response.status);
+      // Don't error - RAG is optional enhancement
+    }
+  } catch (error) {
+    console.warn("RAG explanation error:", error);
+    // Don't error - RAG is optional enhancement
+  }
+}
+
+function displayRAGExplanation(explanation) {
+  // Create a new card for the RAG explanation if it doesn't exist
+  let ragCard = document.querySelector('#rag-explanation-card');
+  
+  if (!ragCard) {
+    // Add new card to results-grid
+    const resultsGrid = document.getElementById('results-grid');
+    ragCard = document.createElement('div');
+    ragCard.id = 'rag-explanation-card';
+    ragCard.className = 'result-card anim';
+    ragCard.style.animationDelay = '0.36s';
+    ragCard.innerHTML = `
+      <div class="result-card-header">✨ Groq (Llama 3.3) Explanation</div>
+      <div class="result-card-body">
+        <div class="rag-explanation-text" id="rag-explanation-text"></div>
+      </div>
+    `;
+    resultsGrid.appendChild(ragCard);
+  }
+  
+  // Format explanation with proper styling for Qwen's numbered output
+  let formattedExplanation = explanation
+    // Preserve newlines as <br>
+    .split('\n')
+    .map(line => {
+      // Highlight numbered sections (1. LITERAL, 2. CULTURAL, etc.)
+      if (/^\d+\.\s+[A-Z]/.test(line.trim())) {
+        return `<div style="margin-top: 2em; margin-bottom: 1em; font-size: 1.05em; font-weight: bold; color: #d4af37; border-left: 4px solid #d4af37; padding-left: 1em;">${line}</div>`;
+      }
+      // Bold text (**text**)
+      let formatted = line.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #fff; font-weight: bold;">$1</strong>');
+      // Italics (*text*)
+      formatted = formatted.replace(/\*(.*?)\*/g, '<em style="color: #e8c547;">$1</em>');
+      // Convert bullet points
+      if (line.trim().startsWith('- ')) {
+        return `<li style="margin-left: 2em; margin-bottom: 0.5em; line-height: 1.6;">${line.replace(/^-\s*/, '')}</li>`;
+      }
+      return `<div style="line-height: 1.8; margin-bottom: 0.8em;">${formatted}</div>`;
+    })
+    .join('')
+    // Wrap consecutive <li> in <ul>
+    .replace(/(<li.*?<\/li>)+/g, '<ul style="margin: 1em 0; list-style: disc;">$&</ul>');
+  
+  // Update the explanation text
+  document.getElementById('rag-explanation-text').innerHTML = formattedExplanation;
 }
  
 /* ════ AUDIO ════ */

@@ -26,5 +26,15 @@ einops>=0.7
 diffusers>=0.25.0
 pillow>=10.0
 
-# Utilities
+# RAG Pipeline (FAISS + OpenRouter)
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-huggingface>=0.0.1
+faiss-cpu>=1.7.4
+datasets>=2.14.0
+pandas>=2.1.0
 requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Legacy (Llama 2 quantization - no longer needed but kept for reference)
+# bitsandbytes>=0.41.0
