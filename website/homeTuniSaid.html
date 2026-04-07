@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TuniSaid — Tunisian Proverbs</title>
-  <link href="homeTuniSaid.css" rel="stylesheet" />
+  <link href="style.css" rel="stylesheet" />
 
 </head>
 
@@ -54,11 +54,10 @@
         <div class="themes-row" id="themes-row"></div>
       </div>
  
-      <!-- Count -->
+      <!-- Proverb list with pagination -->
       <div class="results-count" id="results-count"></div>
- 
-      <!-- Proverb list -->
       <div class="proverb-list" id="proverb-list"></div>
+      <div class="proverb-pagination" id="proverb-pagination"></div>
  
       <!-- Selected proverb preview -->
       <div class="selected-preview" id="selected-preview">
@@ -97,43 +96,109 @@
 
         <!-- Loading -->
         <div class="loading-bar" id="loading-bar" style="display:none;">
-          <div>
+          <div class="loading-spinner-wrap">
             <div class="spinner"></div>
+            <div id="loading-text">Analyzing proverb…</div>
           </div>
-          <div id="loading-text">Analyzing proverb…</div>
-          <div id="loading-timer" style="margin-top: 10px; font-size: 0.85em; color: #666;">Elapsed: 0s</div>
-          <div id="generation-info" style="margin-top: 15px;"></div>
+          <div id="generation-info" class="generation-info"></div>
         </div>
 
         <!-- Result cards -->
         <div class="results-grid" id="results-grid" style="display:none;">
 
           <div class="result-card anim" style="animation-delay:0s">
-            <div class="result-card-header">🖼️ Generated Visual</div>
+            <div class="result-card-header">🖼️ Visual Illustration</div>
             <div class="result-card-body">
               <div class="img-box" id="img-box">🏛️</div>
+              <button class="btn-audio" onclick="generateImage()" style="margin-top: 10px; width: 100%;">Generate Image</button>
             </div>
           </div>
 
-          <div class="result-card anim" style="animation-delay:0.12s">
-            <div class="result-card-header">📖 Cultural Story</div>
+          <div class="result-card full anim" style="animation-delay:0.12s">
+            <div class="result-card-header">📖 Proverb Analysis</div>
             <div class="result-card-body">
-              <p class="story-text" id="story-text"></p>
+              <!-- Language tabs -->
+              <div class="language-tabs" id="language-tabs">
+                <button class="lang-tab active" onclick="switchLanguage('en')">English</button>
+                <button class="lang-tab" onclick="switchLanguage('fr')">Français</button>
+                <button class="lang-tab" onclick="switchLanguage('ar')">العربية</button>
+              </div>
+
+              <!-- English content -->
+              <div class="language-content active" id="lang-en">
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">Literal Meaning</h4>
+                  <p class="rag-explanation-text" id="literal-en"></p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">Hidden Meaning</h4>
+                  <p class="rag-explanation-text" id="hidden-en"></p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">Moral Lesson</h4>
+                  <p class="rag-explanation-text" id="moral-en"></p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">The Story</h4>
+                  <p class="story-text" id="story-en"></p>
+                </div>
+              </div>
+
+              <!-- French content -->
+              <div class="language-content" id="lang-fr">
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">Signification Littérale</h4>
+                  <p class="rag-explanation-text" id="literal-fr"></p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">Signification Cachée</h4>
+                  <p class="rag-explanation-text" id="hidden-fr"></p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">Leçon Morale</h4>
+                  <p class="rag-explanation-text" id="moral-fr"></p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">L'Histoire</h4>
+                  <p class="story-text" id="story-fr"></p>
+                </div>
+              </div>
+
+              <!-- Arabic content -->
+              <div class="language-content" id="lang-ar">
+                <div style="margin-bottom: 1.5rem; direction: rtl; text-align: right;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">المعنى الحرفي</h4>
+                  <p class="rag-explanation-text" id="literal-ar"></p>
+                </div>
+                <div style="margin-bottom: 1.5rem; direction: rtl; text-align: right;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">المعنى المخفي</h4>
+                  <p class="rag-explanation-text" id="hidden-ar"></p>
+                </div>
+                <div style="margin-bottom: 1.5rem; direction: rtl; text-align: right;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">الدرس الأخلاقي</h4>
+                  <p class="rag-explanation-text" id="moral-ar"></p>
+                </div>
+                <div style="margin-bottom: 1.5rem; direction: rtl; text-align: right;">
+                  <h4 style="color: var(--red); margin-bottom: 0.5rem; font-weight: 600;">القصة</h4>
+                  <p class="story-text" id="story-ar"></p>
+                </div>
+              </div>
             </div>
           </div>
 
           <div class="result-card full anim" style="animation-delay:0.24s">
-            <div class="result-card-header">🎙️ Darja Audio Narration</div>
+            <div class="result-card-header">🎙️ Listen to Story</div>
             <div class="result-card-body">
 
               <!-- Before generation -->
               <div class="audio-gen-wrap" id="audio-gen-wrap">
-                <button class="btn-audio" onclick="generateAudio()">Generate Audio</button>
-                <p class="audio-gen-hint">Narration in Tunisian Darja — click to generate on demand</p>
+                <button class="btn-audio" onclick="generateAudio()">Generate Narration</button>
+                <p class="audio-gen-hint">Click to generate audio narration</p>
               </div>
 
               <!-- Audio player (shown after generation) -->
               <div id="audio-player-wrap" style="display:none;">
+                <audio id="audio-player" style="display:none;"></audio>
                 <div class="audio-player">
                   <button class="play-btn" id="play-btn" onclick="togglePlay()">▶</button>
                   <div class="audio-wave" id="audio-wave">
@@ -171,7 +236,7 @@
     <div class="footer-copy">© 2025 · Tunisian Proverb Storyteller · Built with ❤️ in Tunisia</div>
   </footer>
 
-  <script src="script.js" defer></script>
+  <script src="script.js?v=20260406-layout-audio-fix" defer></script>
 </body>
 
 </html>

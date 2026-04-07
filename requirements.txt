@@ -36,5 +36,8 @@ pandas>=2.1.0
 requests>=2.31.0
 python-dotenv>=1.0.0
 
+# Audio narration (Darja TTS)
+gtts>=2.3.0
+
 # Legacy (Llama 2 quantization - no longer needed but kept for reference)
 # bitsandbytes>=0.41.0

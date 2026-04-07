@@ -1,0 +1,519 @@
+arabic_word,transliteration,english_translation,tunisian_dialect_variant,category,notes
+السلام عليكم,as-salamu alaykum,Peace be upon you,Salam / Slema,greeting,Universal Islamic greeting
+وعليكم السلام,wa alaykum as-salam,And upon you peace,W'alaykum salam,greeting,Response to the greeting
+صباح الخير,sabah al-khayr,Good morning,Sbah el-kheir,greeting,Morning greeting
+صباح النور,sabah an-nur,Morning of light (response),Sbah en-nour,greeting,Response to good morning
+مساء الخير,masa al-khayr,Good evening,Msa el-kheir,greeting,Evening greeting
+مساء النور,masa an-nur,Evening of light (response),Msa en-nour,greeting,Response to good evening
+مرحبا,marhaba,Hello / Welcome,Marhba,greeting,Casual hello
+أهلا وسهلا,ahlan wa sahlan,Welcome,Ahla w sahla,greeting,Warm welcome
+كيف حالك,kayfa halak,How are you?,Chneya halak / Chneya amel,greeting,MSA vs Tunisian
+بخير,bi-khayr,Fine / Good,Bekhir,greeting,Response to how are you
+الحمد لله,al-hamdu lillah,Praise be to God / Thanks to God,El-hamdullah,expression,Used to mean I am fine / thankfully
+ما شاء الله,ma sha Allah,What God has willed / Wonderful,Machallah,expression,Said to express admiration or ward off evil eye
+إن شاء الله,in sha Allah,God willing,Inchallah,expression,Expresses hope or future intention
+بسم الله,bismillah,In the name of God,Bismillah,expression,Said before starting any action
+جزاك الله خيرا,jazak Allah khayran,May God reward you with goodness,Yaajik el-kheir,expression,Thanking someone
+شكرا,shukran,Thank you,Yaaychek / Merci (French loan),expression,Formal thanks
+عفوا,afwan,You're welcome / Excuse me,Maânich jdid,expression,Response to thank you
+من فضلك,min fadlak,Please,Aamlili el-jmila / Aamlili sa'a,expression,Polite request
+آسف / آسفة,asif / asifa,Sorry (m/f),Asif,expression,Apology
+معليش,ma'alish,Never mind / It's okay,Maaleich,expression,Dismissing a problem
+يسلمو,yislamu,Thank you / Bless your hands,Yislemu,expression,Tunisian specific thanks
+بالسلامة,bi-ssalama,Go in peace / Goodbye,Bslema,farewell,Said when someone is leaving
+مع السلامة,ma'a ssalama,With peace / Goodbye,M'a sslema,farewell,Said by the one staying
+إلى اللقاء,ila al-liqa,Until we meet again,Lqaak,farewell,See you later
+يلا باي,yalla bay,Okay bye,Yalla bay,farewell,Very Tunisian informal farewell
+تبارك الله,tabarak Allah,Blessed be God,Tbarak Allah,expression,Said in admiration
+لا إله إلا الله,la ilaha illa Allah,There is no god but God,La ilaha illallah,expression,Islamic declaration of faith
+أب / بابا,ab / baba,Father,Baba,family,
+أم / ماما,umm / mama,Mother,Mama / Ommi,family,
+أخ,akh,Brother,Khoya (my brother),family,
+أخت,ukht,Sister,Okhti (my sister),family,
+جد,jadd,Grandfather,Jiddi / Sido,family,
+جدة,jadda,Grandmother,Tata / Setteti,family,Setteti is common in Tunisia
+عم,amm,Paternal uncle,Ammi,family,
+عمة,amma,Paternal aunt,Amma,family,
+خال,khal,Maternal uncle,Khali,family,
+خالة,khala,Maternal aunt,Khalt,family,
+ابن,ibn,Son,Wlid,family,Tunisian uses wlid
+بنت,bint,Daughter,Bent,family,
+زوج,zawj,Husband,Rajel,family,Tunisian uses rajel (man/husband)
+زوجة,zawja,Wife,Mara,family,Tunisian uses mara
+حفيد,hafid,Grandson,Hafid,family,
+حفيدة,hafida,Granddaughter,Hafida,family,
+ابن عم,ibn amm,Male cousin (paternal),Welid ammi,family,
+ابنة عم,ibnat amm,Female cousin (paternal),Bent ammi,family,
+حماة,hamah,Mother-in-law,Hmayti,family,
+حمو,hamu,Father-in-law,Hmaya,family,
+كنة,kinna,Daughter-in-law,Kenna,family,Tunisian term
+نسيب,nasib,Brother-in-law,Nsib,family,
+صاحب,sahib,Friend / companion,Sahbi (my friend),relationship,
+صديق,sadiq,Friend,Sahbi,relationship,
+حبيب,habib,Beloved / darling,Habibi / Habibti,relationship,
+عريس,aris,Groom / fiancé,Aris,relationship,
+عروسة,arousa,Bride / fiancée,Arousa,relationship,
+جار,jar,Neighbor,Jar,relationship,Key word in many proverbs
+رأس,ras,Head,Ras,body,
+شعر,sha'ar,Hair,Chaâr,body,
+وجه,wajh,Face,Wejh,body,
+عين,ayn,Eye,Ain,body,
+أنف,anf,Nose,Nif,body,
+فم,famm,Mouth,Tomm,body,Tunisian uses tomm
+لسان,lisan,Tongue,Lsan,body,
+أسنان,asnan,Teeth,Snan,body,
+أذن,udhun,Ear,Widn,body,
+رقبة,raqaba,Neck,Raqba,body,
+كتف,katif,Shoulder,Ktef,body,
+يد,yad,Hand,Yed,body,Key word in proverbs
+ذراع,dhira',Arm,Draa,body,
+إصبع,isba',Finger,Sba',body,
+صدر,sadr,Chest,Sdar,body,
+بطن,batn,Stomach / Belly,Karcha,body,Tunisian uses karcha informally
+ظهر,zahr,Back,Dhar,body,
+ساق,saq,Leg / Shin,Sq,body,
+ركبة,rukba,Knee,Rkeba,body,
+قدم,qadam,Foot,Rejl,body,Tunisian uses rejl
+قلب,qalb,Heart,Qalb,body,Also means center/core
+دم,damm,Blood,Demm,body,Key word in proverbs
+روح,ruh,Soul / Spirit,Rouh,body,Also means go (verb) in Tunisian
+جسم,jism,Body,Jesm,body,
+صفر,sifr,Zero,Sifr,number,
+واحد,wahid,One,Wahad,number,
+اثنان,ithnan,Two,Zouz / Thnin,number,Zouz is Tunisian informal
+ثلاثة,thalatha,Three,Tletha,number,
+أربعة,arba'a,Four,Arba,number,
+خمسة,khamsa,Five,Khamsa,number,
+ستة,sitta,Six,Setta,number,
+سبعة,sab'a,Seven,Saba,number,
+ثمانية,thamaniya,Eight,Thmanya,number,
+تسعة,tis'a,Nine,Tsa,number,
+عشرة,ashara,Ten,Aachra,number,
+عشرين,ishrin,Twenty,Aachrin,number,
+ثلاثين,thalatheen,Thirty,Tlethin,number,
+أربعين,arba'een,Forty,Arbaïn,number,
+خمسين,khamseen,Fifty,Khamseen,number,
+مئة,mi'a,One hundred,Mya,number,
+ألف,alf,One thousand,Alf,number,
+مليون,milyun,One million,Milyoun,number,
+أحمر,ahmar,Red,Ahmar,color,
+أزرق,azraq,Blue,Azreq,color,
+أخضر,akhdar,Green,Akhdar,color,
+أصفر,asfar,Yellow,Asfar,color,
+أبيض,abyad,White,Abyad,color,
+أسود,aswad,Aswed / Khal,Khal,color,Khal is Tunisian
+بني,bunni,Brown,Bni,color,
+برتقالي,burtuqali,Orange,Portgali,color,From Portuguese/French
+وردي,wardi,Pink,Wardi,color,
+بنفسجي,banafsaji,Purple / Violet,Bnafsji,color,
+رمادي,ramadi,Grey,Rmedi,color,
+ذهبي,dhahabi,Golden,Dhahbi,color,
+فضي,fiddi,Silver,Fiddi,color,
+بيج,beige,Beige,Beige,color,French loanword used in Tunisia
+خبز,khubz,Bread,Khobz / Kesra,food,Kesra is traditional Tunisian bread
+ماء,ma',Water,Ma,food,
+حليب,halib,Milk,Hlib,food,
+قهوة,qahwa,Coffee,Qahwa,food,
+شاي,shay,Tea,Atay,food,Atay is Tunisian (from Moroccan influence)
+عصير,asir,Juice,Asir,food,
+خضار,khudhar,Vegetables,Khodra,food,
+فاكهة,fakiha,Fruit,Fawkha,food,Tunisian uses fawkha
+لحم,lahm,Meat,Lahm,food,
+دجاج,dajaj,Chicken,Djej,food,
+سمك,samak,Fish,Hout,food,Tunisian uses hout
+بيض,bayd,Eggs,Bid,food,
+زيت زيتون,zayt zaytun,Olive oil,Zit zitouna,food,Tunisia is major olive oil producer
+ملح,milh,Salt,Melh,food,
+سكر,sukkar,Sugar,Sukkar,food,
+بصل,basal,Onion,Basal,food,
+ثوم,thum,Garlic,Thoum,food,
+طماطم,tamatim,Tomatoes,Tomatem,food,
+فلفل,filfil,Pepper / Chili,Felfel,food,
+هريسة,harisa,Harissa,Harissa,food,Tunisia's famous chili paste
+كسكسي,kuskusi,Couscous,Kosksi,food,Tunisia's national dish
+شكشوكة,shakshuka,Shakshouka,Chakchouka,food,Tunisian egg and tomato dish
+برك,brik,Brik,Brik,food,Tunisian pastry with egg
+لبلابي,lablabi,Lablabi,Lablabi,food,Tunisian chickpea soup
+مشوي,mashwi,Grilled,Mechwi,food,
+حلويات,halawiyyat,Sweets / Pastries,Hlawiyyat,food,
+مطعم,mat'am,Restaurant,Resto,food,Tunisian uses French resto
+طبخ,tabkh,Cooking / Dish,Tbikh,food,
+شمس,shams,Sun,Chems,nature,
+قمر,qamar,Moon,Qmar,nature,
+نجمة,najma,Star,Njma,nature,
+سماء,sama',Sky,Sma,nature,
+أرض,ard,Earth / Ground,Ardh,nature,
+بحر,bahr,Sea,Bhar,nature,Tunisia has long Mediterranean coastline
+جبل,jabal,Mountain,Jbal,nature,
+واد,wadi,River / Valley,Wed,nature,
+صحراء,sahra',Desert,Sahra,nature,Part of Tunisia is Sahara
+غابة,ghaba,Forest,Ghaba,nature,
+حقل,haql,Field,Hqel,nature,
+زهرة,zahra,Flower,Zahra,nature,
+شجرة,shajara,Tree,Chajra,nature,
+ياسمين,yasmin,Jasmine,Yasmin,nature,Tunisia's national flower
+زيتونة,zaytuna,Olive tree,Zitouna,nature,Symbol of Tunisia
+ريح,rih,Wind,Rih,nature,
+مطر,matar,Rain,Mtar,nature,
+برق,barq,Lightning,Barq,nature,
+رعد,ra'd,Thunder,Raad,nature,
+ثلج,thalj,Snow,Thelj,nature,Rare in Tunisia
+رمل,raml,Sand,Reml,nature,
+حجر,hajar,Stone / Rock,Hjara,nature,
+بحيرة,buhayra,Lake,Bhira,nature,
+جزيرة,jazira,Island,Jazira,nature,Djerba is famous Tunisian island
+يوم,yawm,Day,Nhar,time,Tunisian uses nhar for day
+ليل,layl,Night,Lil,time,
+صباح,sabah,Morning,Sbah,time,
+مساء,masa',Evening / Afternoon,Msa,time,
+ظهر,zuhr,Noon / Midday,Dhohr,time,
+منتصف الليل,muntasaf al-layl,Midnight,Noss el-lil,time,
+الآن,al-an,Now,Tawa,time,Tawa is Tunisian
+اليوم,al-yawm,Today,Lyoum,time,
+غدا,ghadan,Tomorrow,Ghodwa,time,
+أمس,ams,Yesterday,Ams / Lbareh,time,
+الأسبوع,al-usbu',Week,Simana,time,Tunisian uses simana (from Italian settimana)
+الشهر,ash-shahr,Month,Chhar,time,
+السنة,as-sana,Year,El-aam,time,
+الجمعة,al-jumu'a,Friday / Week,El-Jemaa,time,Also means mosque
+السبت,as-sabt,Saturday,Esebt,time,
+الأحد,al-ahad,Sunday,El-Had,time,
+الاثنين,al-ithnayn,Monday,El-Ithnayn,time,
+الثلاثاء,ath-thulatha',Tuesday,Et-Tlata,time,
+الأربعاء,al-arbi'a',Wednesday,El-Arbaa,time,
+الخميس,al-khamis,Thursday,El-Khmis,time,
+الربيع,ar-rabi',Spring,Rbia,season,
+الصيف,as-sayf,Summer,Sayf,season,
+الخريف,al-kharif,Autumn / Fall,Khrif,season,
+الشتاء,ash-shita',Winter,Chta,season,
+ذهب,dhahaba,To go,Mcha,verb,Tunisian uses mcha
+جاء,ja'a,To come,Ja,verb,
+أكل,akala,To eat,Kl,verb,
+شرب,shariba,To drink,Chreb,verb,
+نام,nama,To sleep,Nam,verb,
+صحى,saha,To wake up,Saha,verb,
+عمل,amala,To work / do,Aamel,verb,
+درس,darasa,To study,Dres,verb,
+قرأ,qara'a,To read,Qra,verb,
+كتب,kataba,To write,Kteb,verb,
+تكلم,takallama,To speak / talk,Tkellam,verb,
+سمع,sami'a,To hear / listen,Sma,verb,
+رأى,ra'a,To see,Chaf,verb,Tunisian uses chaf
+فهم,fahima,To understand,Fehm,verb,
+عرف,arafa,To know,Aaref,verb,
+أحب,ahabb,To love / like,Habb,verb,
+كره,kariha,To hate / dislike,Kreh,verb,
+فتح,fataha,To open,Ftah,verb,
+غلق,ghalaqa,To close,Ghleq,verb,
+دخل,dakhala,To enter,Dkhal,verb,
+خرج,kharaja,To exit / leave,Khrej,verb,
+رجع,raja'a,To return,Raja,verb,
+جلس,jalasa,To sit,Qad,verb,Tunisian uses qad
+وقف,waqafa,To stand / stop,Wqef,verb,
+ركض,rakada,To run,Jri,verb,Tunisian uses jri
+مشى,masha,To walk,Mcha,verb,
+قال,qala,To say,Qal,verb,
+سأل,sa'ala,To ask,Swal,verb,
+أجاب,ajaba,To answer,Jab,verb,
+أعطى,a'ta,To give,Aata,verb,
+أخذ,akhadha,To take,Khidh,verb,
+باع,ba'a,To sell,Baa,verb,
+اشترى,ishtara,To buy,Chtara,verb,
+دفع,dafa'a,To pay,Dfa,verb,
+فتش,fattasha,To search,Fettesh,verb,
+وجد,wajada,To find,Lqa,verb,Tunisian uses lqa
+طبخ,tabakha,To cook,Tbakh,verb,
+نظّف,naddafa,To clean,Nadhdhef,verb,
+غسل,ghassala,To wash,Ghsel,verb,
+لبس,labisa,To wear / dress,Lbes,verb,
+خلع,khala'a,To undress / remove,Khla,verb,
+صلّى,salla,To pray,Salla,verb,
+بكى,baka,To cry,Bka,verb,
+ضحك,dahika,To laugh,Dhek,verb,
+فرح,fariha,To be happy,Freh,verb,
+حزن,hazina,To be sad,Hzen,verb,
+رجا,raja,To hope,Raja,verb,
+خاف,khafa,To fear / be afraid,Khaf,verb,
+نسي,nasiya,To forget,Nsi,verb,
+تذكر,tadhakkara,To remember,Tfekker,verb,
+ساعد,sa'ada,To help,Saaed,verb,
+شرح,sharaha,To explain,Chareh,verb,
+اتصل,ittasala,To call / contact,Ittasel,verb,
+انتظر,intazara,To wait,Stanna,verb,Tunisian uses stanna
+كبير,kabir,Big / Large / Old (person),Kbir,adjective,
+صغير,saghir,Small / Young,Sghir,adjective,
+طويل,tawil,Tall / Long,Twil,adjective,
+قصير,qasir,Short,Qsir,adjective,
+سمين,samin,Fat / Overweight,Smin,adjective,
+نحيف,nahif,Thin / Slim,Nhif,adjective,
+جميل,jamil,Beautiful / Handsome,Jmil,adjective,
+قبيح,qabih,Ugly,Qbih,adjective,
+حسن,hassan,Good / Nice,Behi (Tunisian),adjective,Tunisian uses behi
+سيئ,sayyi',Bad,Khayeb,adjective,Tunisian uses khayeb
+جديد,jadid,New,Jdid,adjective,
+قديم,qadim,Old (thing),Qdim,adjective,
+سريع,sari',Fast,Srih,adjective,
+بطيء,bati',Slow,Bati,adjective,
+غالي,ghali,Expensive / Dear,Ghali,adjective,
+رخيص,rakhis,Cheap,Rkhis,adjective,
+قريب,qarib,Near / Close,Qrib,adjective,
+بعيد,ba'id,Far / Distant,Baïd,adjective,Key word in proverbs
+صعب,sa'b,Difficult / Hard,Sab,adjective,
+سهل,sahl,Easy,Sehel,adjective,
+صحيح,sahih,Correct / True / Healthy,Sehih,adjective,
+خاطئ,khati',Wrong / Incorrect,Ghalat,adjective,Tunisian uses ghalat
+قوي,qawi,Strong / Powerful,Qawi,adjective,
+ضعيف,da'if,Weak,Daif,adjective,
+ذكي,dhaki,Smart / Intelligent,Dhki,adjective,
+غبي,ghabi,Stupid,Ghabi,adjective,
+مشغول,mashghul,Busy,Machghoul,adjective,
+فارغ,farigh,Empty / Free / Unoccupied,Farekh,adjective,Tunisian uses farekh
+نظيف,nazif,Clean,Nadhif,adjective,
+وسخ,wasikh,Dirty,Wsekh,adjective,
+حار,harr,Hot,Harr,adjective,
+بارد,barid,Cold,Bared,adjective,
+مفتوح,maftuh,Open,Meftuh,adjective,
+مغلق,mughlaq,Closed,Mghleq,adjective,
+مهم,muhimm,Important,Muhimm,adjective,
+بسيط,basit,Simple / Humble,Bsit,adjective,
+ممتاز,mumtaz,Excellent,Mumtaz,adjective,
+رائع,ra'i',Wonderful / Amazing,Raa'i,adjective,
+مزيان,mizyan,Good / Nice,Mizyan,adjective,Tunisian/Maghrebi term
+بهي,bahi,Good / Nice / Fine,Bahi,adjective,Specifically Tunisian
+مريح,murih,Comfortable / Restful,Mrih,adjective,
+متعب,mut'ib,Tiring / Exhausted,Mtaab,adjective,
+فرحان,farhan,Happy,Farhan,adjective,
+حزين,hazin,Sad,Hzin,adjective,
+خايف,kha'if,Afraid / Scared,Khayef,adjective,
+زعلان,za'lan,Angry / Upset,Zaalan,adjective,Tunisian common term
+منقزز,muqazziz,Disgusted / Disgusting,Mnaqqez,adjective,Tunisian specific
+بيت / دار,bayt / dar,House / Home,Dar,place,Dar is universal in Tunisia
+غرفة,ghurfa,Room,Ghorfa,place,
+مطبخ,matbakh,Kitchen,Kuzina,place,Tunisian uses kuzina (Italian cucina)
+حمام,hammam,Bathroom / Turkish bath,Hammam,place,
+مدرسة,madrasa,School,Madrasa,place,
+جامعة,jami'a,University,Juumia,place,
+مستشفى,mustashfa,Hospital,Hopital (French),place,Tunisian often uses French
+دكان,dukkan,Shop / Store,Dukkan,place,
+سوق,suq,Market / Bazaar,Souq,place,
+مدينة,madina,City / Old city,Medina,place,Medina also refers to old quarters
+قرية,qarya,Village,Qria,place,
+شارع,shari',Street,Charia,place,
+طريق,tariq,Road / Way,Triq,place,
+جسر,jisr,Bridge,Qantara,place,Tunisian uses qantara
+ميناء,mina',Port / Harbor,Mina,place,Tunisia has key Mediterranean ports
+مطار,matar,Airport,Matar,place,
+محطة,mahatta,Station,Mahatta,place,
+مسجد / جامع,masjid / jami',Mosque,Jemaa,place,Jemaa is Tunisian
+كنيسة,kanisa,Church,Knisa,place,
+بحر,bahr,Sea,Bhar,place,
+شاطئ,shati',Beach,Blaja,place,Tunisian uses blaja (from French plage)
+صحراء,sahra',Desert,Sahra,place,
+حديقة,hadiqa,Garden / Park,Jnina,place,Tunisian uses jnina
+مستودع,mustawda',Warehouse / Storage,Makhzen,place,
+سعادة,sa'ada,Happiness / Joy,Farah,emotion,
+حزن,huzn,Sadness,Houzn,emotion,
+غضب,ghadab,Anger,Ghadab,emotion,
+خوف,khawf,Fear,Khof,emotion,
+حب,hubb,Love,Hobb,emotion,
+كره,kurh,Hatred,Kurh,emotion,
+أمل,amal,Hope,Amel,emotion,
+يأس,ya's,Despair,Yaas,emotion,
+فرح,farah,Joy,Farah,emotion,
+ألم,alam,Pain,Alam,emotion,
+راحة,raha,Rest / Comfort / Peace,Raha,emotion,
+تعب,ta'ab,Fatigue / Tiredness,Taab,emotion,
+قلق,qalaq,Anxiety / Worry,Qlaq,emotion,
+طمأنينة,tuma'nina,Tranquility / Reassurance,Tumaanina,emotion,
+غيرة,ghira,Jealousy,Ghira,emotion,
+حسد,hasad,Envy,Hasad,emotion,
+خجل,khajal,Shame / Embarrassment,Khejel,emotion,
+فخر,fakhr,Pride,Fakhr,emotion,
+دهشة,dahsha,Astonishment / Surprise,Dahcha,emotion,
+ندم,nadam,Regret / Remorse,Nadem,emotion,
+صبر,sabr,Patience,Sabr,emotion,Key concept in Tunisian culture
+شوق,shawq,Longing / Yearning,Chawq,emotion,
+حنين,hanin,Nostalgia,Hnin,emotion,
+الله,Allah,God,Allah,religion,
+نبي,nabi,Prophet,Nabi,religion,
+إسلام,islam,Islam,Islam,religion,
+مسلم,muslim,Muslim,Mselm,religion,
+قرآن,quran,Quran,Quran,religion,
+صلاة,salah,Prayer,Sala,religion,
+صوم,sawm,Fasting,Siyam,religion,
+زكاة,zakat,Almsgiving,Zakat,religion,
+حج,hajj,Pilgrimage,Hajj,religion,
+رمضان,ramadan,Ramadan,Ramadhan,religion,Holy month
+عيد,eid,Feast / Holiday,Aïd,religion,Eid al-Fitr and Eid al-Adha
+جنة,janna,Paradise / Heaven,Jenna,religion,
+نار,nar,Fire / Hell,Nar,religion,
+دعاء,du'a',Supplication / Prayer,Doa,religion,
+ذكر,dhikr,Remembrance of God,Dhikr,religion,
+حلال,halal,Permitted / Lawful,Halal,religion,
+حرام,haram,Forbidden / Prohibited,Haram,religion,
+سنة,sunna,Prophetic tradition,Sunna,religion,
+إيمان,iman,Faith / Belief,Iman,religion,
+توبة,tawba,Repentance,Towba,religion,
+بركة,baraka,Blessing / Grace,Baraka,religion,
+شيطان,shaytan,Devil / Satan,Chitan,religion,
+ملك / ملاك,malak,Angel,Malek,religion,
+وضوء,wudu',Ritual ablution,Wdhou,religion,
+صحة,sihha,Health,Saha,health,Also used as cheers when drinking
+مريض,marid,Sick / Ill,Mrid,health,
+دواء,dawa',Medicine,Dwa,health,
+طبيب,tabib,Doctor,Tbib,health,
+مستشفى,mustashfa,Hospital,Hôpital,health,French term used in Tunisia
+عملية,amaliyya,Surgery / Operation,Amaliya,health,
+ألم,alam,Pain,Alam,health,
+صداع,suda',Headache,Sdaa,health,
+حمى,humma,Fever,Hmiya,health,
+سعال,su'al,Cough,Kohha,health,Tunisian uses kohha
+زكام,zukam,Cold / Flu,Berd,health,Tunisian uses berd (cold)
+جرح,jurh,Wound / Cut,Jreh,health,
+كسر,kasr,Fracture / Break,Ksara,health,
+ضغط,daght,Pressure / Blood pressure,Daght,health,
+سكري,sukkar,Diabetes,Sokri,health,
+قلب,qalb,Heart,Qalb,health,
+رئة,ri'a,Lung,Ri'a,health,
+كلية,kulya,Kidney,Kulya,health,
+كبد,kabid,Liver,Kbid,health,
+عملية قيصرية,amaliyya qaysariyya,Cesarean section,Amaliya qissariya,health,
+حمل,haml,Pregnancy,Haml,health,
+ولادة,wilada,Birth / Delivery,Wleda,health,
+علم,ilm,Knowledge / Science,Ilm,education,
+تعليم,ta'lim,Education,Talim,education,
+كتاب,kitab,Book,Ktab,education,
+قلم,qalam,Pen,Qlam,education,
+ورقة,waraqa,Paper / Sheet,Warqa,education,
+لوح,lawh,Board / Tablet,Lwah,education,
+فصل,fasl,Classroom / Chapter / Season,Fasl,education,
+امتحان,imtihan,Exam / Test,Imtihan,education,
+نتيجة,natija,Result,Natija,education,
+نجاح,najah,Success,Njaah,education,
+فشل,fashal,Failure,Fchel,education,
+أستاذ,ustaadh,Teacher / Professor,Osta,education,Osta also means master craftsman
+طالب,talib,Student,Taleb,education,
+مهنة,mihna,Profession,Mehna,education,
+عمل,amal,Work,Khedma,education,Tunisian uses khedma
+موظف,muwazzaf,Employee,Mwaddhef,education,
+مدير,mudir,Director / Manager,Mudir,education,
+رئيس,ra'is,President / Boss / Chief,Raïs,education,Also means president
+مهندس,muhandis,Engineer,Muhandis,education,
+طبيب,tabib,Doctor,Tbib,education,
+محامي,muhami,Lawyer,Muhami,education,
+تاجر,tajir,Merchant / Trader,Tajir,education,
+فلاح,fallah,Farmer,Fallah,education,
+نجار,najjar,Carpenter,Najjar,education,
+حداد,haddad,Blacksmith,Haddad,education,
+خياط,khayyat,Tailor,Khayyat,education,
+طباخ,tabbakh,Cook / Chef,Tabbakh,education,
+راتب,ratib,Salary,Ratib,education,
+مال,mal,Money / Wealth,Flouss (pl),education,Flouss is Tunisian for money
+برشا,barsha,A lot / Many / Very much,Very common Tunisian word,dialect,One of the most common Tunisian words
+يزي,yzi,Enough / That's enough,Tunisian,dialect,Very commonly used
+ياسر,yaser,A lot / Very,Tunisian,dialect,Synonym of barsha
+عادي,aadi,Normal / Okay / Whatever,Tunisian,dialect,Dismissive or reassuring
+مزيان,mizyan,Good / Nice / Fine,Tunisian,dialect,Maghrebi term widely used in Tunisia
+هاك,hak,Here you go / Take it,Tunisian,dialect,Handing something to someone
+آش,ash,What,Tunisian,dialect,Tunisian equivalent of ماذا
+علاش,alash,Why,Tunisian,dialect,Tunisian equivalent of لماذا
+كيفاش,kifash,How,Tunisian,dialect,Tunisian equivalent of كيف
+وقتاش,waqtash,When,Tunisian,dialect,Tunisian equivalent of متى
+فين,fin,Where,Tunisian,dialect,Tunisian equivalent of أين
+منين,mnin,Where from / Since when,Tunisian,dialect,Tunisian for من أين
+قداش,qdash,How much / How many,Tunisian,dialect,Tunisian equivalent of كم
+علقداش,ala qdash,How much does it cost,Tunisian,dialect,Price inquiry
+باهي / بهي,bahi / bhi,Good / Okay / Fine,Tunisian,dialect,All-purpose positive response
+ميش,mish,No / Not,Tunisian,dialect,Tunisian negation before adjective
+مش,mch,Not,Tunisian,dialect,Negation particle
+ما ... ش,ma ... ch,Negation (wrap around verb),Tunisian,dialect,Tunisian negation structure
+توا,tawa,Now,Tunisian,dialect,Tunisian for الآن
+برة,barra,Outside / Out,Tunisian,dialect,Go out/outside
+داخل,dakhl,Inside,Tunisian,dialect,
+فلوس,flous,Money,Tunisian,dialect,From Arabic فلس but pluralized Tunisian way
+خسارة,khsara,What a shame / Loss / Pity,Tunisian,dialect,Expressing regret
+حشمة,hchma,Shame / Modesty / Embarrassment,Tunisian,dialect,Important social concept
+ماشي مشكلة,machi mchkla,No problem,Tunisian,dialect,Very common expression
+نعم,naam,Yes,Standard Arabic,dialect,
+آه,ah,Yes / Yeah,Tunisian,dialect,Tunisian casual yes
+لا,la,No,Standard,dialect,
+تصورش,tsawwerch,Don't imagine / You can't imagine,Tunisian,dialect,Tunisian expression of disbelief
+دير بالك,dir balek,Be careful / Pay attention,Tunisian,dialect,Very common Tunisian warning
+روح من هنا,rouh men hna,Go away / Get out of here,Tunisian,dialect,
+اش بيك,ash bik,What's wrong with you / What's up with you,Tunisian,dialect,
+راك مزيان,rak mizyan,Are you okay / You're good,Tunisian,dialect,
+ما فماش,ma femmach,There is nothing / There isn't any,Tunisian,dialect,
+فما,fema,There is,Tunisian,dialect,
+عندي,aandi,I have,Tunisian,dialect,
+ما عنديش,ma aandich,I don't have,Tunisian,dialect,
+نحب,nhebb,I love / I like / I want,Tunisian,dialect,
+ما نحبش,ma nhebch,I don't like / I don't want,Tunisian,dialect,
+بغيت,bghit,I want,Tunisian,dialect,
+ما بغيتش,ma bghitich,I don't want,Tunisian,dialect,
+عرفت,aarft,I understood / I know,Tunisian,dialect,
+ما عرفتش,ma aarftich,I don't understand / I don't know,Tunisian,dialect,
+كيفك,kifek,How are you (informal),Tunisian,dialect,
+لاباس,labas,Fine / Not bad,Tunisian,dialect,Also used as how are you — لاباس عليك
+موش لاباس,mouch labas,Not bad / Pretty good,Tunisian,dialect,
+يعيشك,yaaychek,May you live (thank you),Tunisian,dialect,Specifically Tunisian thanks
+ربي يحفظك,rabbi yhafdhek,May God protect you,Tunisian,dialect,Common blessing
+تقبرني,tqabbarni,You bury me (term of endearment),Tunisian,dialect,Means I love you so much I want to die before you
+حبيبي,habibi,My darling / My love,Tunisian,dialect,Universal Arabic term of endearment
+روحي,ruhi,My soul,Tunisian,dialect,Term of endearment
+عمري,omri,My life / My age,Tunisian,dialect,Term of endearment
+يا عزيزي,ya azizi,Oh my dear,Tunisian,dialect,Term of endearment
+و,wa,And,Connector,connector,
+أو,aw,Or,Walla,connector,Tunisian uses walla
+لكن,lakin,But,Amma / Walakin,connector,
+لأن,li'ann,Because,Khater,connector,Tunisian uses khater
+إذا,idha,If,Ken,connector,Tunisian uses ken
+لما,lamma,When,Lamma,connector,
+بعد,ba'd,After / Later,Baad,preposition,
+قبل,qabl,Before,Qbel,preposition,Key word in proverbs
+في,fi,In / At,Fi,preposition,
+من,min,From / Of,Men,preposition,
+إلى,ila,To / Toward,L',preposition,
+على,ala,On / About,Ala,preposition,
+تحت,taht,Under / Below,Taht,preposition,
+فوق,fawq,Above / On top,Fuq,preposition,
+أمام,amam,In front of,Qbel,preposition,
+وراء,wara',Behind,Wra,preposition,
+بين,bayn,Between,Bin,preposition,
+مع,ma'a,With,M'a,preposition,
+بدون,bidun,Without,Bla,preposition,Tunisian uses bla
+عند,inda,At / Have / Near,Aand,preposition,
+كل,kull,Every / All,Kull,quantifier,
+بعض,ba'd,Some,Baadh,quantifier,
+كثير,kathir,Many / Much,Barsha / Yaser,quantifier,
+قليل,qalil,Few / Little,Chwiya,quantifier,Tunisian uses chwiya
+شوية,shwayya,A little bit,Chwiya,quantifier,Very common Tunisian word
+كيف,kayfa,How / Like,Kima,connector,Tunisian uses kima for like/as
+مثل,mithl,Like / Similar to,Kima / Bhal,connector,Bhal is also used
+لهذا,li-hadha,For this reason / Therefore,A3la hadha,connector,
+عقل,aql,Mind / Reason / Wisdom,Aql,abstract,
+قلب,qalb,Heart / Core,Qalb,abstract,
+روح,ruh,Soul / Spirit,Rouh,abstract,
+نفس,nafs,Self / Soul / Breath,Nafs,abstract,
+حق,haqq,Truth / Right / Justice,Haqq,abstract,Key concept in proverbs
+باطل,batil,Falsehood / Wrong,Batil,abstract,
+حرية,hurriyya,Freedom / Liberty,Hurriya,abstract,
+كرامة,karama,Dignity / Honor,Karama,abstract,Central to Tunisian culture
+عزة,izza,Pride / Self-respect / Glory,Izza,abstract,
+شرف,sharaf,Honor,Charaf,abstract,
+عيب,ayb,Shame / Fault / Defect,Ayb,abstract,Important social concept
+قدر,qadar,Fate / Destiny,Qadar,abstract,
+رزق,rizq,Livelihood / Sustenance / Provision,Rizq,abstract,
+بركة,baraka,Blessing / Grace,Baraka,abstract,
+نصيب,nasib,Fate / Share / Destiny,Nsib,abstract,
+أمانة,amana,Trust / Honesty / Responsibility,Amana,abstract,
+صدق,sidq,Truthfulness / Sincerity,Sadq,abstract,
+وفاء,wafa',Loyalty / Faithfulness,Wafa,abstract,
+غدر,ghadr,Betrayal / Treachery,Ghadr,abstract,
+حكمة,hikma,Wisdom,Hikma,abstract,
+جهل,jahl,Ignorance,Jahl,abstract,
+معرفة,ma'rifa,Knowledge / Gnosis,Maarfa,abstract,
+سر,sirr,Secret,Sirr,abstract,
+صبر,sabr,Patience,Sabr,abstract,One of the most important concepts
+شكر,shukr,Gratitude,Chkour,abstract,
+توكل,tawakkul,Trust in God / Reliance,Twekkel,abstract,
+قناعة,qana'a,Contentment / Satisfaction,Qnaaa,abstract,

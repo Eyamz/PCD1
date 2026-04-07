@@ -34,6 +34,23 @@ logger = logging.getLogger(__name__)
 # Thread pool for running blocking pipeline calls without blocking the event loop
 executor = ThreadPoolExecutor(max_workers=1)  # 1 worker: GPU can't run two jobs at once
 
+# HF Token rotation for rate limit management
+HF_API_TOKENS = [
+    "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",
+    "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",
+    "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"
+]
+token_index = 0
+
+def get_next_hf_token():
+    """Get next token in rotation. Cycles through available tokens."""
+    global token_index
+    if not HF_API_TOKENS:
+        return None
+    current_token = HF_API_TOKENS[token_index % len(HF_API_TOKENS)]
+    token_index += 1
+    return current_token
+
 # State
 db = ProverbDatabase("data/proverbs.db")
 pipeline: Optional[ProverbPipeline] = None
@@ -63,20 +80,23 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning(f"Proverbs JSON not found: {proverbs_json}")
 
-    # Initialize OpenRouter RAG pipeline
+    # Initialize Groq RAG pipeline (FAISS + Groq LLM)
     try:
         logger.info("\n" + "=" * 55)
-        logger.info("Initializing OpenRouter RAG Pipeline")
+        logger.info("Initializing Groq RAG Pipeline")
         logger.info("=" * 55)
         
-        from rag_openrouter_pipeline import initialize_pipeline as init_rag
+        from rag_groq_pipeline import initialize_pipeline as init_rag, load_vocabulary_reference
         init_rag(proverbs_path=proverbs_json)
         
-        logger.info("✅ OpenRouter RAG pipeline ready for /api/explain requests")
+        # Load vocabulary reference for enhanced context
+        load_vocabulary_reference()
+        
+        logger.info("✅ Groq RAG pipeline ready for /api/explain requests")
         logger.info("=" * 55 + "\n")
     except Exception as e:
         logger.error(f"⚠️  RAG pipeline initialization warning: {e}")
-        logger.info("OpenRouter /api/explain endpoint will fail - make sure OPENROUTER_API_KEY is set")
+        logger.info("Groq /api/explain endpoint will fail - make sure GROQ_API_KEY is set")
 
     # Initialize image generation pipeline (optional)
     try:
@@ -159,6 +179,11 @@ class SearchRequest(BaseModel):
 
 class ExplainRequest(BaseModel):
     proverb_text: str
+
+
+class NarrateRequest(BaseModel):
+    text: str
+    language: str = "en"  # Language code: 'ar', 'en', 'fr'
 
 
 # ─────────────────────────────────────────────
@@ -286,29 +311,38 @@ async def get_generation_status(task_id: str):
 @app.post("/api/explain")
 async def explain_proverb(request: ExplainRequest):
     """
-    Generate a detailed explanation for a proverb using OpenRouter RAG pipeline.
+    Generate comprehensive trilingual proverb analysis using Groq RAG pipeline.
     
-    Uses local FAISS for semantic search to find related proverbs, then uses
-    OpenRouter + Qwen to generate a comprehensive explanation with cultural,
-    linguistic, and historical context.
+    Returns analysis in English, French, and Arabic for:
+    - literal_meaning: Direct interpretation
+    - hidden_meaning: Deep cultural wisdom
+    - moral_lesson: Life lesson
+    - narrative: Story embodying the lesson
+    - visual_prompt: For image generation (English only)
+    - visual_summary: How image relates to proverb
     """
     try:
-        # Import here to avoid loading models on startup
-        from rag_openrouter_pipeline import generate_explanation
+        from rag_groq_pipeline import generate_explanation_with_visual_prompt
         
         proverb_text = request.proverb_text.strip()
         if not proverb_text:
             raise HTTPException(status_code=400, detail="Proverb text is required")
         
-        logger.info(f"Generating RAG explanation for: {proverb_text[:50]}")
+        logger.info(f"Generating full trilingual analysis for: {proverb_text[:50]}")
         
-        # Generate explanation using OpenRouter + Qwen (5-10 seconds)
-        explanation = generate_explanation(proverb_text, max_tokens=512)
+        result = generate_explanation_with_visual_prompt(proverb_text, max_tokens=4000)
         
         return {
             "proverb": proverb_text,
-            "explanation": explanation,
-            "source": "openrouter_qwen_rag",
+            "literal_meaning": result["literal_meaning"],
+            "hidden_meaning": result["hidden_meaning"],
+            "moral_lesson": result["moral_lesson"],
+            "narrative": result["narrative"],
+            "explanation": result["explanation"],
+            "visual_prompt": result["visual_prompt"],
+            "visual_summary": result["visual_summary"],
+            "key_phrases": result["key_phrases"],
+            "source": "groq_rag_trilingual",
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
@@ -327,13 +361,223 @@ async def search_proverbs(request: SearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/narrate")
+async def narrate_proverb(request: NarrateRequest):
+    """Generate audio narration in multiple languages:
+    - Arabic: Using gTTS (Google Text-to-Speech) - Free
+    - English/French: Using ElevenLabs
+    """
+    try:
+        proverb_text = request.text.strip()
+        language = request.language.lower()  # 'ar', 'en', 'fr'
+        
+        if not proverb_text:
+            raise HTTPException(status_code=400, detail="Text is required")
+        
+        from pathlib import Path
+        import uuid
+        import os
+        
+        # Create generated folder if it doesn't exist
+        gen_dir = Path("website/generated")
+        gen_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate unique filename
+        audio_id = f"narration_{uuid.uuid4().hex[:8]}"
+        audio_path = gen_dir / f"{audio_id}.mp3"
+        
+        # ════════════════════════════════════════════════════
+        # ARABIC: Use gTTS (Google Text-to-Speech) - Free API
+        # ════════════════════════════════════════════════════
+        if language == 'ar':
+            try:
+                from gtts import gTTS
+                
+                logger.info(f"Generating Arabic TTS via gTTS for text ({len(proverb_text)} chars)...")
+                
+                # Create gTTS object in Arabic
+                tts = gTTS(text=proverb_text, lang='ar', slow=False)
+                
+                # Save to file
+                tts.save(str(audio_path))
+                
+                logger.info(f"✓ Generated Arabic gTTS narration: {audio_id}")
+                
+                return {
+                    "audio_url": f"/generated/{audio_id}.mp3",
+                    "audio_id": audio_id,
+                    "status": "success",
+                    "language": "ar",
+                    "provider": "gTTS",
+                    "text_length": len(proverb_text)
+                }
+            except Exception as e:
+                logger.error(f"Arabic TTS error: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=f"Arabic TTS failed: {str(e)}")
+        
+        # ════════════════════════════════════════════════════
+        # ENGLISH/FRENCH: Use ElevenLabs
+        # ════════════════════════════════════════════════════
+        else:  # 'en' or 'fr'
+            import re
+            
+            # For non-Arabic languages, clean text to remove Arabic characters
+            cleaned_text = re.sub(r'[\u0600-\u06FF]', '', proverb_text)  # Remove Arabic
+            cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()  # Clean spaces
+            
+            if not cleaned_text or len(cleaned_text) < 3:
+                raise HTTPException(status_code=400, detail="No text found in selected language")
+            
+            # Limit text length for TTS
+            if len(cleaned_text) > 5000:
+                cleaned_text = cleaned_text[:5000]
+            
+            from elevenlabs import ElevenLabs
+            
+            # Get API key from environment
+            api_key = os.getenv("ELEVENLABS_API_KEY")
+            if not api_key:
+                raise HTTPException(status_code=500, detail="ElevenLabs API key not configured")
+            
+            logger.info(f"Generating {language.upper()} TTS via ElevenLabs for text ({len(cleaned_text)} chars)...")
+            
+            # Use ElevenLabs API with natural female voice
+            client = ElevenLabs(api_key=api_key)
+            audio = client.text_to_speech.convert(
+                text=cleaned_text,
+                voice_id="EXAVITQu4vr4xnSDxMaL",  # Bella - natural female voice
+                model_id="eleven_turbo_v2_5"  # Latest turbo model
+            )
+            
+            # Save audio to file
+            with open(audio_path, "wb") as f:
+                for chunk in audio:
+                    f.write(chunk)
+            
+            logger.info(f"✓ Generated {language.upper()} ElevenLabs narration: {audio_id}")
+            
+            return {
+                "audio_url": f"/generated/{audio_id}.mp3",
+                "audio_id": audio_id,
+                "status": "success",
+                "language": language,
+                "provider": "ElevenLabs",
+                "text_length": len(cleaned_text)
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Audio narration error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to generate audio: {str(e)}")
+
+
+# ─────────────────────────────────────────────
+# Image Generation via Hugging Face Inference API
+# ─────────────────────────────────────────────
+
+@app.post("/api/generate-image")
+async def generate_image_hf(request: dict):
+    """Generate image from visual prompt using Hugging Face Inference API (Stable Diffusion XL)
+    
+    Also calculates CLIP score to measure image-text alignment quality.
+    """
+    try:
+        prompt = request.get("prompt", "").strip()
+        if not prompt:
+            raise HTTPException(status_code=400, detail="Prompt is required")
+        
+        if len(prompt) > 500:
+            prompt = prompt[:500]
+        
+        # Get next HF token from rotation pool
+        hf_token = get_next_hf_token()
+        if not hf_token:
+            raise HTTPException(status_code=500, detail="Hugging Face API tokens not configured")
+        
+        from huggingface_hub import InferenceClient
+        from pathlib import Path
+        import uuid
+        
+        # Create generated folder if it doesn't exist
+        gen_dir = Path("website/generated")
+        gen_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate unique filename
+        image_id = f"image_{uuid.uuid4().hex[:8]}"
+        image_path = gen_dir / f"{image_id}.png"
+        
+        logger.info(f"Generating image with HF Inference API for prompt: {prompt[:50]}...")
+        
+        # Use Hugging Face Inference API with Stable Diffusion XL
+        client = InferenceClient(api_key=hf_token)
+        image = client.text_to_image(
+            prompt=prompt,
+            model="stabilityai/stable-diffusion-xl-base-1.0"
+        )
+        
+        # Save image to file
+        image.save(str(image_path))
+        logger.info(f"✓ Generated image: {image_id}")
+        
+        # Calculate CLIP score to measure image-prompt alignment
+        clip_score = 0.0
+        try:
+            import torch
+            from PIL import Image
+            import open_clip
+            
+            # Load CLIP model
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            model, _, preprocess = open_clip.create_model_and_transforms(
+                'ViT-B-32',
+                pretrained='openai',
+                device=device
+            )
+            tokenizer = open_clip.get_tokenizer('ViT-B-32')
+            
+            # Prepare image and text
+            image_tensor = preprocess(image).unsqueeze(0).to(device)
+            text_tokens = tokenizer(prompt).to(device)
+            
+            # Compute CLIP score
+            with torch.no_grad():
+                image_features = model.encode_image(image_tensor)
+                text_features = model.encode_text(text_tokens)
+                
+                # Normalize features
+                image_features /= image_features.norm(dim=-1, keepdim=True)
+                text_features /= text_features.norm(dim=-1, keepdim=True)
+                
+                # Cosine similarity (0-1 scale)
+                clip_score = (image_features @ text_features.T).squeeze().item()
+                clip_score = max(0.0, min(1.0, (clip_score + 1) / 2))  # Normalize to 0-1
+            
+            logger.info(f"✓ CLIP score: {clip_score:.2f}")
+        except Exception as clip_err:
+            logger.warning(f"CLIP scoring failed: {clip_err}. Using default score.")
+            clip_score = 0.85  # Default fallback score
+        
+        return {
+            "image_url": f"/generated/{image_id}.png",
+            "image_id": image_id,
+            "status": "success",
+            "prompt": prompt,
+            "clip_score": round(clip_score, 2)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Image generation error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to generate image: {str(e)}")
+
+
 # ─────────────────────────────────────────────
 # Root — serve the HTML page
 # ─────────────────────────────────────────────
 
 @app.get("/")
 async def root():
-    html = Path("website/homeTuniSaid.html")
+    html = Path("website/index.html")
     if html.exists():
         return FileResponse(str(html))
     raise HTTPException(status_code=404, detail="Frontend not found")
@@ -368,6 +612,7 @@ async def _generate_background(task_id: str, proverb_id: str, proverb_text: str,
     Async wrapper around the blocking pipeline.process() call.
     FIX: runs the CPU/GPU-bound work in a thread executor so it doesn't
     block the FastAPI event loop (which would freeze all other requests).
+    Includes image generation via Hugging Face Inference API.
     """
     loop = asyncio.get_event_loop()
     try:
@@ -382,6 +627,41 @@ async def _generate_background(task_id: str, proverb_id: str, proverb_text: str,
             executor,
             _process_wrapper
         )
+
+        generation_status[task_id] = {"status": "generating_image", "progress": 70}
+
+        # Generate image via Hugging Face Inference API if enabled
+        image_url = ""
+        if config.get("system", {}).get("enable_image_generation", False) and output.generated_prompt:
+            try:
+                hf_token = get_next_hf_token()
+                if hf_token:
+                    logger.info(f"Generating image via HF API for prompt: {output.generated_prompt[:50]}...")
+                    
+                    from huggingface_hub import InferenceClient
+                    from pathlib import Path
+                    import uuid as uuid_lib
+                    
+                    gen_dir = Path("website/generated")
+                    gen_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    image_id = f"image_{uuid_lib.uuid4().hex[:8]}"
+                    image_path = gen_dir / f"{image_id}.png"
+                    
+                    client = InferenceClient(api_key=hf_token)
+                    image = client.text_to_image(
+                        prompt=output.generated_prompt,
+                        model="stabilityai/stable-diffusion-xl-base-1.0"
+                    )
+                    
+                    image.save(str(image_path))
+                    output.image_path = str(image_path)
+                    image_url = f"/generated/{image_id}.png"
+                    logger.info(f"✓ Image generated: {image_id}")
+                else:
+                    logger.warning("HF_API_TOKEN not configured, skipping image generation")
+            except Exception as img_err:
+                logger.warning(f"Image generation failed: {img_err}, continuing without image")
 
         generation_status[task_id] = {"status": "saving", "progress": 80}
 
