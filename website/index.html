@@ -111,6 +111,18 @@
             <div class="result-card-body">
               <div class="img-box" id="img-box">🏛️</div>
               <button class="btn-audio" onclick="generateImage()" style="margin-top: 10px; width: 100%;">Generate Image</button>
+              
+              <!-- CLIP Score Display -->
+              <div class="clip-score-container" id="clip-score-display" style="display: none;">
+                <div class="clip-score-bar">
+                  <div class="clip-score-label">📊 Image-Text Alignment</div>
+                  <div class="clip-score-gauge">
+                    <div class="clip-score-fill" id="clip-score-fill"></div>
+                    <div class="clip-score-text" id="clip-score-text">--</div>
+                  </div>
+                  <div class="clip-score-details" id="clip-score-details"></div>
+                </div>
+              </div>
             </div>
           </div>
 

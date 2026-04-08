@@ -289,20 +289,26 @@ async function generateStory(proverb_text = null) {
   
   // Scroll to results
   setTimeout(() => {
-    document.querySelector('.results-section').scrollIntoView({behavior: 'smooth'});
+    const resultsSection = document.getElementById('results-section');
+    if (resultsSection) {
+      resultsSection.scrollIntoView({behavior: 'smooth'});
+    }
   }, 300);
   
   // Show loading
-  document.getElementById('loading-bar').style.display = 'block';
-  document.getElementById('results-grid').style.display = 'none';
-  document.getElementById('input-section').classList.add('open');
-  document.getElementById('results-section').classList.add('open');
+  const loadingBar = document.getElementById('loading-bar');
+  if (loadingBar) loadingBar.style.display = 'block';
   
-  const startTime = Date.now();
-  const timerInterval = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    document.getElementById('loading-timer').innerHTML = `Elapsed: ${elapsed}s`;
-  }, 1000);
+  const resultsGrid = document.getElementById('results-grid');
+  if (resultsGrid) resultsGrid.style.display = 'none';
+  
+  const inputSection = document.getElementById('input-section');
+  if (inputSection) inputSection.classList.add('open');
+  
+  const resultSection = document.getElementById('results-section');
+  if (resultSection) resultSection.classList.add('open');
+  
+  let timerInterval;
   
   try {
     console.log("[EXPLAIN] Calling /api/explain with proverb:", proverb_text);
@@ -321,8 +327,12 @@ async function generateStory(proverb_text = null) {
     console.log("[EXPLAIN] ✓ Response received:", data);
     
     clearInterval(timerInterval);
-    document.getElementById('loading-bar').style.display = 'none';
-    document.getElementById('results-grid').style.display = 'flex';
+    
+    const loadingBar = document.getElementById('loading-bar');
+    if (loadingBar) loadingBar.style.display = 'none';
+    
+    const resultsGrid = document.getElementById('results-grid');
+    if (resultsGrid) resultsGrid.style.display = 'flex';
     
     // Display trilingual explanation
     displayRAGExplanation(data);
@@ -330,8 +340,12 @@ async function generateStory(proverb_text = null) {
   } catch (error) {
     console.error("[EXPLAIN] ❌ Error:", error);
     clearInterval(timerInterval);
-    document.getElementById('loading-bar').style.display = 'none';
-    document.getElementById('loading-text').textContent = '❌ Error: ' + error.message;
+    
+    const loadingBar = document.getElementById('loading-bar');
+    if (loadingBar) loadingBar.style.display = 'none';
+    
+    const loadingText = document.getElementById('loading-text');
+    if (loadingText) loadingText.textContent = '❌ Error: ' + error.message;
   }
 }
 
@@ -447,6 +461,9 @@ async function generateImage() {
           </div>
         </div>
       `;
+      
+      // Display CLIP score in the dedicated container
+      displayCLIPScore(clipScore, data);
     } else {
       const errorText = await response.text();
       console.error("🎨[GEN] ❌ HTTP Error:", response.status, errorText.substring(0, 200));
@@ -456,6 +473,65 @@ async function generateImage() {
     console.error('🎨[GEN] ❌ Exception:', error);
     imgBox.innerHTML = '🖼️ Error: ' + error.message;
   }
+}
+
+function displayCLIPScore(clipScore, responseData) {
+  const container = document.getElementById('clip-score-display');
+  if (!container) return;
+  
+  // Convert 0-1 scale score to 0-100 scale for display
+  const score100 = clipScore * 100;
+  
+  // Determine quality level and styling
+  let qualityLabel = '';
+  let qualityClass = '';
+  let emoji = '';
+  
+  if (score100 >= 85) {
+    qualityLabel = 'Excellent';
+    qualityClass = 'excellent';
+    emoji = '🟢';
+  } else if (score100 >= 70) {
+    qualityLabel = 'Good';
+    qualityClass = 'good';
+    emoji = '🟡';
+  } else if (score100 >= 50) {
+    qualityLabel = 'Fair';
+    qualityClass = 'fair';
+    emoji = '🟠';
+  } else {
+    qualityLabel = 'Needs Improvement';
+    qualityClass = 'poor';
+    emoji = '🔴';
+  }
+  
+  // Update fill width (0-100%)
+  const fillPercentage = Math.min(score100, 100);
+  const fillElement = document.getElementById('clip-score-fill');
+  if (fillElement) {
+    fillElement.style.width = fillPercentage + '%';
+  }
+  
+  // Update text content
+  const textElement = document.getElementById('clip-score-text');
+  if (textElement) {
+    textElement.textContent = `${score100.toFixed(1)}/100`;
+  }
+  
+  // Update details section
+  const detailsElement = document.getElementById('clip-score-details');
+  if (detailsElement) {
+    detailsElement.innerHTML = `
+      <span class="clip-quality-indicator ${qualityClass}">
+        <span>${emoji}</span>
+        <span>${qualityLabel}</span>
+      </span>
+      <span style="color: var(--text-muted);">Image-text alignment</span>
+    `;
+  }
+  
+  // Show the container with animation
+  container.style.display = 'block';
 }
 
 function downloadImage(imageUrl, imageId) {

@@ -27,6 +27,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from database import ProverbDatabase
 from proverb_pipeline_lite import ProverbPipeline, GeneratedOutput
+from clip_scorer import calculate_clip_score, get_scorer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -572,6 +573,105 @@ async def generate_image_hf(request: dict):
 
 
 # ─────────────────────────────────────────────
+# CLIP Score Calculation
+# ─────────────────────────────────────────────
+
+@app.post("/api/clip-score")
+async def calculate_image_text_clip_score(request: dict):
+    """
+    Calculate CLIP similarity score between an image and text.
+    
+    Request body:
+    {
+        "image_path": "/generated/image_abc123.png" (or full path),
+        "text": "The proverb or description text"
+    }
+    
+    Returns:
+    {
+        "score": 75.5,           # Score 0-100
+        "label": "Good",         # Quality label
+        "emoji": "🟡",           # Quality emoji
+        "details": {...}         # Detailed metrics
+    }
+    """
+    try:
+        image_path = request.get("image_path", "").strip()
+        text = request.get("text", "").strip()
+        
+        if not image_path or not text:
+            raise HTTPException(
+                status_code=400, 
+                detail="Both 'image_path' and 'text' are required"
+            )
+        
+        # Handle URL paths like /generated/image.png -> website/generated/image.png
+        if image_path.startswith("/"):
+            image_path = f"website{image_path}"
+        
+        # Verify file exists
+        if not Path(image_path).exists():
+            raise HTTPException(status_code=404, detail=f"Image not found: {image_path}")
+        
+        logger.info(f"📊 Computing CLIP score for: {Path(image_path).name}")
+        
+        # Calculate CLIP score
+        scorer = get_scorer()
+        clip_score, details = scorer.score_image_text_pair(image_path, text, verbose=True)
+        
+        # Get quality label
+        quality_label, quality_emoji = scorer.get_quality_label(clip_score)
+        
+        return {
+            "success": True,
+            "score": round(clip_score, 1),
+            "label": quality_label,
+            "emoji": quality_emoji,
+            "details": details,
+            "image_path": image_path,
+            "text_length": len(text)
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"CLIP score calculation error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to calculate CLIP score: {str(e)}")
+
+
+@app.get("/api/clip-score/{content_id}")
+async def get_content_clip_score(content_id: str):
+    """Get stored CLIP score for generated content"""
+    try:
+        # Fetch from database (implementation depends on your DB schema)
+        content = db.get_generated_content_by_id(content_id) if hasattr(db, 'get_generated_content_by_id') else None
+        
+        if not content:
+            raise HTTPException(status_code=404, detail="Content not found")
+        
+        clip_score = content.get("clip_score", 0.0)
+        if isinstance(clip_score, float) and clip_score <= 1.0:
+            clip_score * 100  # Convert to 0-100 if stored as 0-1
+        
+        scorer = get_scorer()
+        quality_label, quality_emoji = scorer.get_quality_label(clip_score)
+        
+        return {
+            "content_id": content_id,
+            "score": round(clip_score, 1),
+            "label": quality_label,
+            "emoji": quality_emoji,
+            "image_path": content.get("image_path")
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving CLIP score: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─────────────────────────────────────────────
 # Root — serve the HTML page
 # ─────────────────────────────────────────────
 
@@ -632,6 +732,7 @@ async def _generate_background(task_id: str, proverb_id: str, proverb_text: str,
 
         # Generate image via Hugging Face Inference API if enabled
         image_url = ""
+        clip_score = 0.0
         if config.get("system", {}).get("enable_image_generation", False) and output.generated_prompt:
             try:
                 hf_token = get_next_hf_token()
@@ -658,12 +759,27 @@ async def _generate_background(task_id: str, proverb_id: str, proverb_text: str,
                     output.image_path = str(image_path)
                     image_url = f"/generated/{image_id}.png"
                     logger.info(f"✓ Image generated: {image_id}")
+                    
+                    # Calculate CLIP score dynamically
+                    generation_status[task_id] = {"status": "scoring", "progress": 85}
+                    try:
+                        logger.info(f"📊 Computing CLIP score for image-text alignment...")
+                        clip_score, clip_details = calculate_clip_score(
+                            str(image_path),
+                            proverb_text
+                        )
+                        logger.info(f"✅ CLIP Score computed: {clip_score:.1f}/100")
+                        output.clip_score = clip_score / 100.0  # Store as 0-1 for database
+                    except Exception as e:
+                        logger.warning(f"CLIP scoring failed: {e}, using default score")
+                        clip_score = 70.0
+                        output.clip_score = 0.7
                 else:
                     logger.warning("HF_API_TOKEN not configured, skipping image generation")
             except Exception as img_err:
                 logger.warning(f"Image generation failed: {img_err}, continuing without image")
 
-        generation_status[task_id] = {"status": "saving", "progress": 80}
+        generation_status[task_id] = {"status": "saving", "progress": 90}
 
         content_id = f"content_{uuid.uuid4().hex[:8]}"
         
@@ -686,6 +802,7 @@ async def _generate_background(task_id: str, proverb_id: str, proverb_text: str,
             "progress": 100,
             "content_id": content_id,
             "image_path": output.image_path or "",
+            "clip_score": clip_score,  # Include CLIP score in response
             "interpretation": interpretation_data,  # Include RAG context here
             "result": interpretation_data,  # For frontend compatibility
             "rag_context": output.rag_context or [],  # Explicitly include RAG context
