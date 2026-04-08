@@ -18,6 +18,16 @@ ENV/
 .mypy_cache/
 .ruff_cache/
 
+# Generated files (images & audio)
+website/generated/*.png
+website/generated/*.jpg
+website/generated/*.jpeg
+website/generated/*.mp3
+website/generated/*.wav
+
+# Database
+data/proverbs.db
+
 # Local data artifacts (usually too large for GitHub)
 data/chromadb/
 data/images/
