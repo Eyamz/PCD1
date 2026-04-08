@@ -1,17 +1,17 @@
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║     OPENROUTER + QWEN 3.6+ INTEGRATION - FILE COORDINATION SUMMARY           ║
+║      GROQ + LLAMA 3.3 70B INTEGRATION - FILE COORDINATION SUMMARY           ║
 ║                           ✅ All Systems Connected                           ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
 🎯 PROJECT SCOPE
 ────────────────
 Replace: Llama 2 RAG (local GPU inference)
-With:    OpenRouter + Qwen 3.6+ (API-based, no GPU needed)
+With:    Groq + Llama 3.3 70B (API-based, free tier, no GPU needed)
 
 Architecture:
   • Retrieval:   Local FAISS (CPU-only, sentence-transformers embeddings)
-  • Generation:  OpenRouter API (Qwen 3.6+ model)
-  • Website:     HTML/CSS/JS frontend displaying AIoT explanations
+  • Generation:  Groq API (Llama 3.3 70B model, free tier)
+  • Website:     HTML/CSS/JS frontend displaying AI explanations
 
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -20,19 +20,19 @@ Architecture:
 
 ✅ rag_openrouter_pipeline.py (PRIMARY - IN USE)
    ├─ Functions:
-   │  ├─ initialize_pipeline() → Loads FAISS + validates OpenRouter API key
-   │  ├─ generate_explanation(proverb) → RAG + Qwen generation
+   │  ├─ initialize_pipeline() → Loads FAISS + validates Groq API key
+   │  ├─ generate_explanation(proverb) → RAG + Llama 3.3 70B generation
    │  ├─ retrieve_context(proverb) → FAISS semantic search
-   │  └─ build_prompt(proverb, context) → Crafts Qwen prompt
+   │  └─ build_prompt(proverb, context) → Crafts Llama-optimized prompt
    │
    ├─ Dependencies:
    │  ├─ langchain (FAISS vector store)
    │  ├─ sentence-transformers (embeddings)
-   │  ├─ requests (OpenRouter API calls)
+   │  ├─ requests (Groq API calls)
    │  └─ python-dotenv (load .env)
    │
    └─ Configuration:
-      └─ API Key: Loads from environment var OPENROUTER_API_KEY
+      └─ API Key: Loads from environment var GROQ_API_KEY
          (can be set in .env file or system env)
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -41,26 +41,26 @@ Architecture:
 ===================
 
 ✅ .env (CONFIGURATION)
-   ├─ OPENROUTER_API_KEY=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
+   ├─ GROQ_API_KEY=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
    └─ Status: Loaded by python-dotenv on startup
 
 ✅ requirements.txt (DEPENDENCIES)
    ├─ Added:      python-dotenv, requests
    ├─ Removed:    bitsandbytes (was for local Llama 2 quantization)
    ├─ Kept:       langchain, sentence-transformers, faiss-cpu
-   └─ Image Gen:  torch, transformers, diffusers (for TinyLlama image pipeline)
+   └─ Image Gen:  torch, transformers, diffusers (for image generation)
 
 ✅ app.py (FASTAPI BACKEND)
    ├─ Startup (lifespan):
    │  └─ Line 72: from rag_openrouter_pipeline import initialize_pipeline as init_rag
-   │     Initializes FAISS + validates OpenRouter API key on app startup
+   │     Initializes FAISS + validates Groq API key on app startup
    │
    └─ API Endpoint:
       └─ POST /api/explain (Line 297)
          ├─ Accepts: {"proverb_text": "..."}
          ├─ Calls: generate_explanation() from rag_openrouter_pipeline
-         ├─ Returns: {"proverb": "...", "explanation": "...", "source": "openrouter_qwen_rag", "timestamp": "..."}
-         └─ Response Time: ~5-10 seconds (Qwen inference time)
+         ├─ Returns: {"proverb": "...", "explanation": "...", "source": "groq_llama370b_rag", "timestamp": "..."}
+         └─ Response Time: ~5-10 seconds (Llama 3.3 70B inference time)
 
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -75,17 +75,17 @@ Architecture:
 
 ✅ website/script.js
    ├─ Function: fetchAndDisplayRAGExplanation(proverbText)
-   │  ├─ Line 544: fetch(`${API_BASE}/explain`, POST with proverb_text)
+   │  ├─ fetch(`${API_BASE}/explain`, POST with proverb_text)
    │  └─ Triggered automatically after proverb display
    │
    └─ Function: displayRAGExplanation(explanation)
-      ├─ Creates card with header: "✨ Qwen 3.6+ AI Explanation"
-      ├─ Formats text with paragraph breaks
+      ├─ Creates card with header: "✨ Llama 3.3 70B AI Explanation"
+      ├─ Formats markdown with headers, bold, bullets
       └─ Appends to results-grid on page
 
 ✅ website/homeTuniSaid.css
    ├─ Class: .rag-explanation-text
-   │  └─ Styling for explanation display (already exists)
+   │  └─ Styling for explanation display with gold headers/bold text
    └─ Card layout: .result-card (shared with other results)
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -100,9 +100,14 @@ Architecture:
    ├─ Why deprecated: Too slow, requires GPU+auth, expensive in compute
    └─ Migration: All callers switched to rag_openrouter_pipeline.py
 
+📦 OPENROUTER_INTEGRATION_SUMMARY.md (OUTDATED DOCS)
+   ├─ Status: Documentation only, superceded by GROQ_INTEGRATION_SUMMARY.md
+   ├─ Reason: Referenced old OpenRouter approach
+   └─ Reference: See this file (GROQ_INTEGRATION_SUMMARY.md) for current status
+
 📦 proverb_pipeline_lite.py (IMAGE GENERATION PIPELINE)
    ├─ Status: Still active for image generation (separate feature)
-   ├─ Model: TinyLlama-1.1B-Chat-v1.0 (for story/narrative generation)
+   ├─ Model: Uses Groq for semantic interpretation
    ├─ Integration: Handled by app.py's ProverbPipeline class
    └─ Note: Does NOT use RAG - separate from explanation pipeline
 
@@ -125,15 +130,15 @@ Calls: from rag_openrouter_pipeline import generate_explanation
     ↓
 generate_explanation() executes:
    1. retrieve_context() → FAISS semantic search (local, ~100ms)
-   2. build_prompt() → Format prompt with context
-   3. requests.post() → OpenRouter API call (Qwen 3.6+) (~5-10s)
+   2. build_prompt() → Format 6-section prompt with context
+   3. requests.post() → Groq API call (Llama 3.3 70B) (~5-10s)
    4. Parse response → Extract explanation text
     ↓
-Returns JSON: {"proverb": "...", "explanation": "...", "source": "openrouter_qwen_rag"}
+Returns JSON: {"proverb": "...", "explanation": "...", "source": "groq_llama370b_rag"}
     ↓
 script.js displayRAGExplanation() creates card in results-grid
     ↓
-User sees: Proverb + Story + Explanation (Qwen-generated)
+User sees: Proverb + Structured Explanation (Llama 3.3 70B-generated)
 
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -143,9 +148,9 @@ User sees: Proverb + Story + Explanation (Qwen-generated)
 Communication Paths:
 [✓] app.py → rag_openrouter_pipeline.py (import at lines 72, 297)
 [✓] rag_openrouter_pipeline.py → FAISS local (no external calls)
-[✓] rag_openrouter_pipeline.py → OpenRouter API (requests.post)
+[✓] rag_openrouter_pipeline.py → Groq API (requests.post)
 [✓] script.js → app.py /api/explain endpoint (fetch)
-[✓] .env → rag_openrouter_pipeline.py (OPENROUTER_API_KEY)
+[✓] .env → rag_openrouter_pipeline.py (GROQ_API_KEY)
 [✓] run.py → app.py (uvicorn startup)
 [✓] proverb_pipeline_lite.py → independent (image gen only)
 [✓] database.py → independent (no RAG dependency)
@@ -160,21 +165,23 @@ Legacy File Isolated: ✓
 =============
 
 1. Set API Key (already in .env):
-   OPENROUTER_API_KEY=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
+   GROQ_API_KEY=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
 
 2. Install dependencies:
    pip install -r requirements.txt
 
 3. Start server:
    python -m uvicorn app:app --host 127.0.0.1 --port 8000
+   OR
+   python run.py
 
 4. Open website:
    http://127.0.0.1:8000/
    or http://localhost:8000/
 
 5. Click "Explore a Proverb" or "Enter a Proverb"
-   → Explanation auto-fetches from OpenRouter
-   → Displays in card with "✨ Qwen 3.6+ AI Explanation"
+   → Explanation auto-fetches from Groq
+   → Displays in card with "✨ Llama 3.3 70B AI Explanation"
 
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -184,13 +191,13 @@ Legacy File Isolated: ✓
 Latency per Proverb:
   ├─ FAISS Retrieval:      ~100ms (local CPU)
   ├─ Prompt Building:      ~10ms  (local)
-  ├─ OpenRouter API Call:  ~5-10s (network + Qwen inference)
+  ├─ Groq API Call:        ~5-10s (network + Llama 3.3 70B inference)
   └─ Total:                ~5-10 seconds per explanation
 
 Cost per Explanation:
-  ├─ Model: Qwen 3.6+ :free tier
-  ├─ Typical tokens: ~250 prompt + 200 completion
-  └─ Cost: FREE (OpenRouter $5 starter credit)
+  ├─ Model: Llama 3.3 70B (Groq free tier)
+  ├─ Cost: COMPLETELY FREE
+  └─ Rate Limits: None (free tier, unlimited calls)
 
 Memory Usage:
   ├─ FAISS vectorstore: ~50MB
@@ -200,16 +207,21 @@ Memory Usage:
 
 ═══════════════════════════════════════════════════════════════════════════════
 
-✨ READY FOR PRODUCTION
-=======================
+🎯 WHY GROQ + LLAMA 3.3 70B?
+=============================
 
-All files are coordinated and integrated.
-✅ Backend ready
-✅ Frontend ready
-✅ API keys configured
-✅ Dependencies specified
-✅ Legacy files isolated
+Compared to local GPU approaches:
+  ✅ NO GPU REQUIRED - runs on CPU-only
+  ✅ NO VRAM constraints - server works on any machine
+  ✅ COMPLETELY FREE - Groq free tier, unlimited calls
+  ✅ FAST - 70B model is powerful despite API latency
+  ✅ RELIABLE - Industry-grade API infrastructure
+  ✅ EASY TO SCALE - No model loading or memory management
 
-You can now run the application!
+Compared to OpenRouter:
+  ✅ ACTUALLY FREE (no credits/starter fees)
+  ✅ No rate limits on free tier
+  ✅ Faster response times (optimized Groq inference)
+  ✅ Llama 3.3 70B is excellent quality model
 
 ═══════════════════════════════════════════════════════════════════════════════
