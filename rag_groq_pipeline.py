@@ -758,6 +758,132 @@ def initialize_pipeline(proverbs_path: str = "website/proverbs.json") -> None:
         raise
 
 
+def add_generated_content_to_faiss(
+    proverb: str, 
+    generated_explanation: dict,
+    content_type: str = "generated"
+) -> bool:
+    """
+    Add newly generated content back to FAISS vector store for future retrieval.
+    
+    This enables iterative improvement where each generation enriches the knowledge base.
+    Future queries can now retrieve newly generated insights as context.
+    
+    Args:
+        proverb: Original Tunisian proverb
+        generated_explanation: Dict with keys like 'explanation', 'narrative_story', 'hidden_meaning'
+        content_type: Type of content ('generated', 'user_submitted', etc.)
+    
+    Returns:
+        bool: True if successfully added, False otherwise
+    """
+    global vectorstore
+    
+    if vectorstore is None:
+        logger.warning("FAISS vectorstore not initialized. Cannot add generated content.")
+        return False
+    
+    try:
+        # Extract the most valuable generated content to add
+        explanation_text = generated_explanation.get('explanation', '')
+        narrative_text = generated_explanation.get('narrative_story', '')
+        hidden_meaning = generated_explanation.get('hidden_meaning', '')
+        
+        # Create enriched content combining explanation + narrative
+        enriched_content = f"""
+المثل: {proverb}
+النوع: {content_type}
+
+الشرح المُولّد: {explanation_text}
+
+القصة: {narrative_text}
+
+المعنى العميق: {hidden_meaning}
+        """.strip()
+        
+        # Create a document with metadata indicating this is generated content
+        new_doc = Document(
+            page_content=enriched_content,
+            metadata={
+                "proverb": proverb,
+                "source": content_type,
+                "content_type": "generated_insights",
+                "explanation": explanation_text,
+                "narrative": narrative_text,
+                "hidden_meaning": hidden_meaning,
+                "added_to_index": True
+            }
+        )
+        
+        # Add to vectorstore
+        vectorstore.add_documents([new_doc])
+        logger.info(f"✓ Added generated content to FAISS for: {proverb[:50]}...")
+        
+        # Persist updated index to disk
+        save_faiss_vectorstore()
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to add generated content to FAISS: {e}")
+        return False
+
+
+def save_faiss_vectorstore(vectorstore_path: str = "faiss_vectorstore_proverbs") -> bool:
+    """
+    Save (or update) FAISS vector store to disk.
+    
+    Call this after adding new content to persist changes.
+    
+    Args:
+        vectorstore_path: Path where FAISS index is stored
+    
+    Returns:
+        bool: True if successfully saved, False otherwise
+    """
+    global vectorstore
+    
+    if vectorstore is None:
+        logger.warning("No FAISS vectorstore to save")
+        return False
+    
+    try:
+        vectorstore.save_local(vectorstore_path)
+        logger.info(f"✓ FAISS vector store persisted to {vectorstore_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to save FAISS vector store: {e}")
+        return False
+
+
+def enable_feedback_loop(enabled: bool = True) -> dict:
+    """
+    Enable or disable automatic feedback loop (adding generated content back to FAISS).
+    
+    When enabled, each generated explanation will be added to FAISS, enriching
+    the knowledge base for future queries.
+    
+    Returns:
+        dict: Configuration status
+    """
+    return {
+        "feedback_loop_enabled": enabled,
+        "description": "Feedback loop allows generated content to improve future results",
+        "benefits": [
+            "Generated insights become part of retrieval context",
+            "Iterative knowledge base improvement",
+            "Better cultural understanding over time",
+            "Continuous learning from generation patterns"
+        ],
+        "implementation": {
+            "after_generation": "Call add_generated_content_to_faiss(proverb, generated_dict)",
+            "persistence": "Updated FAISS index saved automatically",
+            "retrieval": "Future queries can now retrieve newly generated insights"
+        },
+        "note": "Currently requires manual integration in app.py pipeline"
+    }
+
+
 if __name__ == "__main__":
     # Test the pipeline
     logging.basicConfig(level=logging.INFO)

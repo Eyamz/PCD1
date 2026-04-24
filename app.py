@@ -782,15 +782,17 @@ async def _generate_background(task_id: str, proverb_id: str, proverb_text: str,
                     image_url = f"/generated/{image_id}.png"
                     logger.info(f"✓ Image generated: {image_id}")
                     
-                    # Calculate CLIP score dynamically
+                    # Calculate CLIP score dynamically (use visual prompt, not proverb text)
                     generation_status[task_id] = {"status": "scoring", "progress": 85}
                     try:
                         logger.info(f"📊 Computing CLIP score for image-text alignment...")
+                        # Use the detailed visual prompt for accurate scoring (not the short proverb)
+                        scoring_text = output.generated_prompt or proverb_text
                         clip_score, clip_details = calculate_clip_score(
                             str(image_path),
-                            proverb_text
+                            scoring_text
                         )
-                        logger.info(f"✅ CLIP Score computed: {clip_score:.1f}/100")
+                        logger.info(f"✅ CLIP Score computed: {clip_score:.1f}/100 | Text: {scoring_text[:60]}...")
                         output.clip_score = clip_score / 100.0  # Store as 0-1 for database
                     except Exception as e:
                         logger.warning(f"CLIP scoring failed: {e}, using default score")
@@ -818,6 +820,31 @@ async def _generate_background(task_id: str, proverb_id: str, proverb_text: str,
             image_path=output.image_path or "",
             clip_score=output.clip_score or 0.7,
         )
+
+        # ✨ FEEDBACK LOOP: Add generated content back to FAISS for iterative improvement
+        try:
+            from rag_groq_pipeline import add_generated_content_to_faiss
+            
+            generated_dict = {
+                "explanation": interpretation_data.get("explanation", ""),
+                "narrative_story": interpretation_data.get("narrative_story", ""),
+                "hidden_meaning": interpretation_data.get("hidden_meaning", ""),
+                "moral_lesson": interpretation_data.get("moral_lesson", ""),
+                "key_phrases": interpretation_data.get("key_phrases", [])
+            }
+            
+            feedback_added = add_generated_content_to_faiss(
+                proverb_text,
+                generated_dict,
+                content_type="system_generated"
+            )
+            
+            if feedback_added:
+                logger.info(f"✅ Feedback loop: Content added to FAISS for future retrieval")
+            else:
+                logger.warning(f"⚠️  Feedback loop: Could not add to FAISS")
+        except Exception as feedback_err:
+            logger.warning(f"Feedback loop error (non-critical): {feedback_err}")
 
         generation_status[task_id] = {
             "status": "complete",

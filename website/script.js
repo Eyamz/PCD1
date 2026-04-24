@@ -1,6 +1,6 @@
 let PROVERBS = [];
 let filteredList = [];
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = "http://localhost:8888/api";
 let currentPage = 1;
 const itemsPerPage = 10;
 
