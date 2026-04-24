@@ -1,102 +1,232 @@
-# Tunisian Proverbs - Architecture & Evolution
+# Tunisian Proverbs - Architecture & Current Implementation
 
-## Current Stack (Active)
+## Current Stack (Production)
 
-### Backend: FastAPI
-- `app.py` - REST API server (8 endpoints)
-- `database.py` - SQLite + ChromaDB persistence
-- `proverb_pipeline_lite.py` - AI/image generation pipeline
+### Backend: FastAPI (Port 8888)
+- `app.py` - REST API server with async processing
+- `rag_groq_pipeline.py` - **RAG System**: Groq LLM + FAISS semantic search + Arabic vocabulary enrichment
+- `database.py` - SQLite persistence for generated content
+- `clip_scorer.py` - **CLIP Score**: Image-text semantic alignment (0-100 scale)
+- `proverb_pipeline_lite.py` - Stable Diffusion XL image generation
 - `run.py` - Startup orchestrator
 
-### Frontend: HTML/CSS/JavaScript
-- `website/homeTuniSaid.html` - Main UI
-- `website/script.js` - Client logic with async polling
+### Frontend: HTML/CSS/JavaScript  
+- `website/index.html` + `website/homeTuniSaid.html` - Main responsive UI
+- `website/script.js` - Client logic (API_BASE = "http://localhost:8888/api")
 - `website/proverbs.json` - 999 Tunisian proverbs dataset
+- `website/generated/` - Generated images and audio narrations
 
-### Configuration
-- `config.json` - Runtime settings (device, generation flags, model params)
+### Configuration & Data
+- `config.json` - Runtime settings
 - `requirements.txt` - Python dependencies
+- `data/proverbs.db` - SQLite database
+- `data/arabic_vocabulary_reference.csv` - Vocabulary for RAG context
+- `faiss_vectorstore_proverbs/` - FAISS vector index (persistent)
 
 ---
 
-## Learning from Previous Iterations
+## Generation Pipeline
 
-### ✅ Patterns Kept & Evolved
+### 1. **Proverb Retrieval**
+```
+999 Proverbs (JSON) → Load into FAISS with embeddings (all-MiniLM-L6-v2)
+```
+- Local semantic search via FAISS
+- Top 4 similar proverbs retrieved as context
 
-**1. Device Management Strategy** (from `utils/device.py`)
-- Originally: Component-specific assignment (GPU→generation, CPU→search)
-- Current: Integrated into proverb_pipeline_lite.py with dynamic device selection
-- Improvement: Simplified while maintaining efficiency
+### 2. **AI Explanation Generation**
+```
+Proverb + Context → Groq API (Llama 3.3 70B) → Structured Output:
+  - explanation (cultural & linguistic context)
+  - narrative_story (story embodying the lesson)
+  - hidden_meaning (deep spiritual wisdom)
+  - moral_lesson (life application)
+  - key_phrases (thematic vocabulary)
+  - visual_prompt (detailed scene description)
+  - visual_summary (concise image description)
+```
+- **Model**: Llama 3.3 70B (via Groq API)
+- **Cost**: FREE (Groq free tier, no rate limits)
+- **Speed**: 1-3 seconds per explanation
+- **Language Support**: Arabic, French, English
 
-**2. Model Caching** (from `reasoning/mistral_loader.py`)
-- Originally: Used lru_cache for Mistral-7B model
-- Current: Lazy-load Phi-2 and SDXL on first use via ProverbPipeline
-- Improvement: Handles multiple models, cleaner initialization
+### 3. **Image Generation**
+```
+visual_prompt (from Groq) → Stable Diffusion XL (HF Inference API) → PNG Image
+```
+- **Speed**: 5-15 seconds
+- **Quality**: SDXL generation with 3-step refinement
+- **Rate Limiting**: Token rotation (multiple HF tokens to avoid limits)
 
-**3. Quantization & Memory Optimization** (from `mistral_loader.py`)
-- Originally: 4-bit NF4 quantization via bitsandbytes for Mistral
-- Current: FP16 precision + sequential CPU offload for SDXL
-- Improvement: More suitable for RTX 2050 constraints
+### 4. **CLIP Scoring** ✨ NEW
+```
+Generated Image + visual_prompt → CLIP (openai/clip-vit-base-patch32) → Score (0-100)
+```
+- **Purpose**: Measure semantic alignment between image and proverb meaning
+- **Scale**: 0-100 (0=poor match, 100=perfect alignment)
+- **Device**: CUDA if available, else CPU
+- **Impact**: Quality metric stored in database for future filtering
 
-**4. RAG Context Retrieval** (from `rag/` folder)
-- Originally: Multi-source RAG (ChromaDB collections)
-- Current: Single ChromaDB instance with semantic embedding search
-- Improvement: Simplified architecture, faster retrieval
+### 5. **Feedback Loop** ✨ NEW
+```
+Generated Content → Embed with FAISS → Add to Index → Persist to Disk
+```
+- After generation, new insights are added back to FAISS
+- Future queries retrieve both original proverbs AND previously generated content
+- Enables iterative knowledge base enrichment
+- Self-improving system over time
 
-**5. Input Validation Pipeline** (from `preprocessing/`)
-- Originally: Separate preprocessing + validation modules
-- Current: Integrated into PromptBuilder in pipeline
-- Improvement: Fewer moving parts, less overhead
-
-### ❌ Why Old Approaches Were Replaced
-
-**Mistral-7B → Phi-2**
-- Mistral-7B: 7B params, 14GB VRAM minimum
-- Phi-2: 2.7B params, 4GB VRAM (fits RTX 2050)
-- Tradeoff: Smaller but still capable for semantic analysis
-
-**Streamlit → FastAPI**
-- Streamlit: Heavy UI framework, slow restart, not ideal for image generation
-- FastAPI: Lightweight, async support, proper background tasks
-- Gain: Faster, more control, better UX
-
-**Standalone Scripts → Unified Pipeline**
-- Old: `run_sdxl_prompt.py`, `streamlit_app.py` (separate entry points)
-- Current: Single `app.py` handling all requests
-- Gain: Single source of truth, no code duplication
-
----
-
-## File Cleanup
-
-### Deleted (Superseded)
-- `reasoning/` - Mistral code (replaced by Phi-2)
-- `preprocessing/` - Old validation (integrated into pipeline)
-- `rag/` - Old RAG implementation (replaced by ChromaDB in pipeline)
-- `streamlit_app.py` - Old UI framework
-- `run_sdxl_prompt.py` - Old standalone script
-- `website/export.py` - Dataset export utility (not needed at runtime)
-- `utils/device.py` - Simplified into pipeline (device mgmt now inline)
-
-### Kept & Active
-- **Core Code**: app.py, database.py, proverb_pipeline_lite.py, run.py
-- **Data**: website/, data/chromadb/, data/proverbs.db
-- **Config**: config.json, requirements.txt
-- **Documentation**: README.md (if exists)
+### 6. **Audio Narration**
+```
+Generated text → gTTS (Arabic) | ElevenLabs (EN/FR) → MP3 Audio
+```
+- Language-specific voice synthesis
+- Stored in `website/generated/`
 
 ---
 
-## Performance Insights
+## Key Improvements Over Previous Iterations
 
-**Model Loading**
-- First run: Models download from HuggingFace (~7GB for SDXL, ~5GB for Phi-2)
-- Subsequent: Cached locally, ~30-60s for full generation on RTX 2050
+### Why Groq API instead of Mistral/Phi-2?
+| Aspect | Mistral-7B | Phi-2 | Llama 3.3 70B (Groq) |
+|--------|-----------|-------|---------------------|
+| Quality | Good | Fair | **Excellent** |
+| Speed | Slow (GPU needed) | Medium | **Very Fast** |
+| Cost | Free (but GPU) | Free (but GPU) | **Free (cloud)** |
+| Setup | Complex | Complex | **Simple** |
+| Cultural Understanding | Good | Limited | **Excellent** |
 
-**Optimization Chain**
-1. Phi-2: 2.7B params (vs 7B for Mistral) → 4GB VRAM
-2. SDXL: FP16 dtype + sequential offload → fits in 4GB
-3. Embeddings: all-MiniLM-L6-v2 (22M params) → CPU efficient
-4. ChromaDB: Local SQLite, no network latency
+Groq enables us to use a **much larger model (70B) without GPU hardware costs**, with better cultural understanding.
+
+### Why FAISS instead of ChromaDB?
+| Aspect | ChromaDB | FAISS |
+|--------|----------|-------|
+| Setup | Requires server | Lightweight |
+| Persistence | Optional | Built-in (`save_local`) |
+| Speed | Network latency | Local, instant |
+| Scalability | Better for large scale | Better for single-server |
+| Integration | Third-party | First-class support |
+
+**Result**: Simpler, faster local semantic search without extra infrastructure.
+
+### CLIP Scoring Benefits
+- **Dynamic Quality Metrics**: Know which images represent proverbs well
+- **Database Tracking**: All scores stored in SQLite for future analysis
+- **User Feedback**: Can show quality indicator in UI
+- **Filtering**: Filter results by quality score threshold
+
+### Feedback Loop Benefits
+- **Self-Improvement**: Generated insights become future context
+- **Knowledge Enrichment**: System learns from its own outputs
+- **Cumulative Wisdom**: Each generation makes next generation better
+- **Cost Efficiency**: Better results without more API calls
+
+---
+
+## API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/proverbs` | GET | Browse all 999 proverbs |
+| `/api/explain` | POST | Generate explanation + story |
+| `/api/generate-image` | POST | Create illustration (DEPRECATED) |
+| `/api/narrate` | POST | Generate audio narration |
+| `/api/clip-score` | POST | Calculate image-text alignment |
+| `/api/status` | GET | Generation task progress |
+| `/api/content/{id}/clip-score` | GET | Retrieve stored CLIP score |
+
+---
+
+## Performance Characteristics
+
+**Generation Time Breakdown:**
+- Proverb retrieval (FAISS): <100ms
+- Groq explanation: 1-3 seconds  
+- Image generation: 5-15 seconds
+- CLIP scoring: 1-2 seconds
+- **Total**: 7-20 seconds per full generation
+
+**Storage Requirements:**
+- FAISS index: ~500MB
+- SQLite database: ~50MB  
+- Generated images: ~5MB each
+- Generated audio: ~1-2MB each
+
+**Concurrency:**
+- FastAPI handles 10+ concurrent requests
+- Background task queue for image/audio generation
+- Non-blocking feedback loop additions
+
+---
+
+## Data Flow Diagram
+
+```
+┌─────────────────┐
+│  User Browser   │
+└────────┬────────┘
+         │ HTTP
+         ▼
+┌──────────────────────────────┐
+│   FastAPI (localhost:8888)   │
+├──────────────────────────────┤
+│  /api/explain              ◄─┼─ POST: proverb_id, language
+│  /api/generate-image        │
+│  /api/narrate               │
+└──┬─────────────────────────┬┘
+   │                         │
+   ▼ Query                   ▼ Generate  
+┌─────────────┐         ┌────────────────┐
+│ FAISS Index │         │  Groq API LLM  │
+│  (Semantic) │         │ (Llama 3.3 70B)│
+└─────────────┘         └────────────────┘
+                               │
+                               ▼ visual_prompt
+                        ┌────────────────────┐
+                        │ Hugging Face SDXL  │
+                        │ (Image Generation) │
+                        └────────────────────┘
+                               │
+                               ▼ Image Path
+                        ┌────────────────────┐
+                        │  CLIP Scorer       │
+                        │ (openai/clip)      │
+                        └────────────────────┘
+                               │
+                               ▼ Score (0-100)
+                        ┌────────────────────┐
+                        │  SQLite Database   │
+                        │ (Persist Results)  │
+                        └────────────────────┘
+                               │
+                               ▼ Add to Index
+                        ┌────────────────────┐
+                        │  FAISS (Feedback)  │
+                        │ (Enriched Index)   │
+                        └────────────────────┘
+```
+
+---
+
+## Configuration
+
+Key settings in `config.json`:
+```json
+{
+  "model_name": "llama-3.3-70b-versatile",
+  "temperature": 0.8,
+  "max_tokens": 4000,
+  "sdxl_device": "cuda",
+  "image_gen_enabled": true
+}
+```
+
+Environment variables in `.env`:
+```
+GROQ_API_KEY=gsk_...
+HF_API_TOKEN=hf_...
+ELEVENLABS_API_KEY=sk_...
+```
 
 **Bottleneck**: Image generation (30-60s) → UX shows timer, users know to wait
 

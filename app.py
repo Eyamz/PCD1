@@ -497,12 +497,15 @@ async def narrate_proverb(request: NarrateRequest):
 # ─────────────────────────────────────────────
 # Image Generation via Hugging Face Inference API
 # ─────────────────────────────────────────────
+# NOTE: This endpoint is deprecated. Use /api/generate instead for full pipeline.
+# Kept for backward compatibility only.
 
 @app.post("/api/generate-image")
 async def generate_image_hf(request: dict):
-    """Generate image from visual prompt using Hugging Face Inference API (Stable Diffusion XL)
+    """[DEPRECATED] Generate image from visual prompt using Hugging Face Inference API
     
-    Also calculates CLIP score to measure image-text alignment quality.
+    This endpoint is deprecated. Use /api/generate for the full generation pipeline
+    with proper CLIP scoring and feedback loop integration.
     """
     try:
         prompt = request.get("prompt", "").strip()
@@ -673,7 +676,7 @@ async def get_content_clip_score(content_id: str):
         
         clip_score = content.get("clip_score", 0.0)
         if isinstance(clip_score, float) and clip_score <= 1.0:
-            clip_score * 100  # Convert to 0-100 if stored as 0-1
+            clip_score = clip_score * 100  # Convert to 0-100 if stored as 0-1
         
         scorer = get_scorer()
         quality_label, quality_emoji = scorer.get_quality_label(clip_score)

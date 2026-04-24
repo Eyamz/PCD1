@@ -11,8 +11,10 @@
 - **🔍 Browse 999+ Proverbs** - Explore authentic Tunisian sayings with cultural context
 - **🎯 Smart Search & Filter** - Find proverbs by keywords and themes
 - **🤖 AI Story Generation** - Groq Llama 3.3 70B generates deep cultural insights
-- **🧠 Vocabulary-Enriched RAG** - Arabic vocabulary reference integrated into AI context for accurate interpretations
-- **🎨 Visual Illustrations** - Hugging Face Inference API creates stunning images (with 3-token rotation for reliability)
+- **🧠 Vocabulary-Enriched RAG** - Arabic vocabulary reference integrated into FAISS context for accurate interpretations
+- **🎨 Visual Illustrations** - Stable Diffusion XL creates stunning images
+- **📊 CLIP Quality Scoring** - Automatic image-text alignment measurement (0-100 scale) for quality assurance
+- **🔄 Feedback Loop Learning** - Generated insights automatically added to FAISS for iterative improvement
 - **🌍 Multi-Language Support** - English, French, and Arabic explanations
 - **🎙️ Audio Narration** - gTTS for Arabic, ElevenLabs for English/French
 - **⚡ Fast & Responsive** - FastAPI with async processing, real-time generation
@@ -23,12 +25,14 @@
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Framework**: FastAPI (Python async web framework)
-- **LLM**: Groq API + Llama 3.3 70B (free tier, no rate limits)
-- **RAG**: FAISS for semantic search + Arabic vocabulary reference CSV for context enrichment
-- **Image Generation**: Hugging Face Inference API (Stable Diffusion XL) with 3-token rotation for rate limit management
+- **Framework**: FastAPI (Python async web framework) running on **port 8888**
+- **LLM**: Groq API + Llama 3.3 70B (free tier, no rate limits, no GPU needed)
+- **Semantic Search**: FAISS (local vector index) with all-MiniLM-L6-v2 embeddings
+- **RAG Enrichment**: Arabic vocabulary reference CSV for cultural context
+- **Image Generation**: Hugging Face Inference API (Stable Diffusion XL)
+- **Image-Text Scoring**: CLIP (openai/clip-vit-base-patch32) for semantic alignment
 - **Audio**: gTTS (Google TTS for Arabic), ElevenLabs (English/French)
-- **Database**: SQLite + FAISS embeddings
+- **Database**: SQLite + FAISS embeddings (persistent local storage)
 
 ### Frontend
 - **HTML5** - Semantic markup
@@ -117,18 +121,22 @@ LOG_LEVEL=INFO
 
 ### Step 5: Start the Server
 
+**Option 1: Automated (Recommended)**
 ```bash
-python run.py
+python app.py
 ```
+This starts FastAPI on **http://localhost:8888** with auto-reload.
 
-Or manually with uvicorn:
+**Option 2: Manual with Uvicorn**
 ```bash
 uvicorn app:app --host 0.0.0.0 --port 8888 --reload
 ```
 
 ### Step 6: Open in Browser
 
-Visit: **http://localhost:8888**
+Visit: **http://localhost:8888** ⬅️ **Make sure it's 8888, not 8000**
+
+The frontend will automatically load from the backend server.
 
 ---
 
@@ -158,46 +166,53 @@ Visit: **http://localhost:8888**
 
 ```
 pcd/
-├── app.py                          # FastAPI backend (routes, API endpoints)
-├── database.py                     # SQLite database management
-├── proverb_pipeline_lite.py       # Image generation pipeline
-├── rag_groq_pipeline.py           # RAG system (Groq + FAISS + Chroma)
+├── app.py                          # FastAPI backend (routes, async processing, feedback loop)
+├── database.py                     # SQLite persistence (proverbs, generated content, CLIP scores)
+├── rag_groq_pipeline.py           # RAG Engine: Groq + FAISS + Vocabulary + Feedback Loop
+├── clip_scorer.py                 # CLIP scorer (image-text alignment 0-100)
+├── proverb_pipeline_lite.py       # SDXL image generation pipeline
 ├── run.py                         # Server startup script
 ├── requirements.txt               # Python dependencies
-├── config.json                    # App configuration (models, paths)
+├── config.json                    # App configuration
 ├── .env                           # Environment variables (API keys)
 │
-├── website/                       # Frontend files
-│   ├── index.html                # Main web page
-│   ├── style.css                 # Styling (flexbox layout, responsive)
-│   ├── script.js                 # JavaScript (UI logic, API calls)
-│   ├── favicon.ico               # Browser tab icon
+├── website/                       # Frontend files (static HTML/CSS/JS)
+│   ├── index.html                # Main web UI
+│   ├── homeTuniSaid.html         # Alternate UI page
+│   ├── style.css                 # Responsive CSS (flexbox, mobile-friendly)
+│   ├── script.js                 # JavaScript (API calls to localhost:8888)
+│   ├── favicon.ico               # Browser icon
 │   ├── proverbs.json             # 999 Tunisian proverbs dataset
-│   └── generated/                # Generated images & audio files
+│   └── generated/                # Generated assets
 │       ├── image_*.png           # AI-generated proverb illustrations
 │       └── narration_*.mp3       # Audio narrations
 │
 ├── data/                         # Data & embeddings
-│   ├── proverbs.db              # SQLite database (metadata, themes)
-│   ├── arabic_vocabulary_reference.csv  # Arabic vocabulary for RAG context
-│   ├── chromadb/                # Chroma vector store (embeddings)
+│   ├── proverbs.db              # SQLite database (metadata, CLIP scores)
+│   ├── arabic_vocabulary_reference.csv  # Vocabulary for RAG enrichment
 │   └── faiss_vectorstore_proverbs/
-│       └── index.faiss          # FAISS semantic search index
+│       └── index.faiss          # FAISS semantic search index (persistent)
 │
 ├── logs/                        # Application logs
-├── ARCHITECTURE.md              # System design documentation
+├── ARCHITECTURE.md              # System design (updated with Groq + FAISS + CLIP)
+├── FEEDBACK_LOOP.md             # Feedback loop documentation
 ├── GROQ_INTEGRATION_SUMMARY.md # Groq API integration notes
-└── README.md                    # This file
+├── CLIP_SCORING.md              # CLIP scoring mechanism  
+├── README.md                    # This file
+└── .gitignore                  # Git configuration
 ```
 
-### Key Directories Explained
+### Key Files Explained
 
-| Directory | Purpose |
-|-----------|---------|
-| `website/` | Frontend HTML/CSS/JS + generated assets |
-| `website/generated/` | AI-generated images and audio files (created on-demand) |
-| `data/` | SQLite DB, FAISS embeddings, ChromaDB vectors, vocabulary CSV |
-| `logs/` | Application runtime logs for debugging |
+| File | Purpose | Notes |
+|------|---------|-------|
+| `app.py` | FastAPI backend | Port 8888, handles /api/* requests, manages background tasks |
+| `rag_groq_pipeline.py` | RAG orchestration | FAISS retrieval + Groq generation + Feedback loop |
+| `clip_scorer.py` | Image quality scoring | Measures semantic alignment (0-100) |
+| `database.py` | SQLite operations | Stores generated content with CLIP scores |
+| `website/script.js` | Frontend API client | Calls `http://localhost:8888/api/*` |
+| `faiss_vectorstore_proverbs/` | Vector index | 999 proverbs + generated content (persists) |
+| `data/proverbs.db` | Content database | Proverb metadata, generated results, CLIP scores |
 
 ---
 
