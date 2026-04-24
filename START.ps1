@@ -26,13 +26,15 @@ if (-not (Test-Path ".venv")) {
 Write-Host "Activating virtual environment..." -ForegroundColor Yellow
 & .\.venv\Scripts\Activate.ps1
 
-# Install/Update requirements
-if (-not (Test-Path ".venv\Lib\site-packages\fastapi")) {
-    Write-Host "Installing requirements (this may take a few minutes)..." -ForegroundColor Yellow
-    pip install -r requirements.txt
-} else {
-    Write-Host "Dependencies already installed" -ForegroundColor Green
+# Install/Update requirements (always check to catch missing packages)
+Write-Host "Checking and installing dependencies..." -ForegroundColor Yellow
+pip install -r requirements.txt --quiet 2>&1 | Where-Object { $_ -match "Successfully installed|Requirement already satisfied|ERROR" }
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Dependency installation failed!" -ForegroundColor Red
+    Write-Host "Run manually: pip install -r requirements.txt" -ForegroundColor Yellow
+    exit 1
 }
+Write-Host "Dependencies ready" -ForegroundColor Green
 
 # Create required directories
 Write-Host "Setting up directories..." -ForegroundColor Yellow

@@ -13,8 +13,10 @@ FIXES:
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.encoders import jsonable_encoder
+from starlette.responses import JSONResponse as StarletteJSONResponse
 from pydantic import BaseModel
 from typing import Optional, List
 import json
@@ -24,6 +26,10 @@ from pathlib import Path
 import uuid
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env
 
 from database import ProverbDatabase
 from proverb_pipeline_lite import ProverbPipeline, GeneratedOutput
@@ -35,22 +41,17 @@ logger = logging.getLogger(__name__)
 # Thread pool for running blocking pipeline calls without blocking the event loop
 executor = ThreadPoolExecutor(max_workers=1)  # 1 worker: GPU can't run two jobs at once
 
-# HF Token rotation for rate limit management
-HF_API_TOKENS = [
-    "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",
-    "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",
-    "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"
-]
+# Load HF token from environment
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+if not HF_API_TOKEN:
+    logger.warning("⚠️  HF_API_TOKEN not found in environment. Image generation will be disabled.")
+
+# Keep single token (no rotation needed with valid token)
 token_index = 0
 
 def get_next_hf_token():
-    """Get next token in rotation. Cycles through available tokens."""
-    global token_index
-    if not HF_API_TOKENS:
-        return None
-    current_token = HF_API_TOKENS[token_index % len(HF_API_TOKENS)]
-    token_index += 1
-    return current_token
+    """Get HF token from environment."""
+    return HF_API_TOKEN
 
 # State
 db = ProverbDatabase("data/proverbs.db")
@@ -137,7 +138,21 @@ app = FastAPI(
     description="AI-powered Tunisian proverb discovery and visualization",
     version="1.1.0",
     lifespan=lifespan,
+    json_encoder=None,  # Use default
 )
+
+# Custom JSON response class that preserves Unicode characters (Arabic text)
+class UTF8JSONResponse(StarletteJSONResponse):
+    def render(self, content):
+        # Use ensure_ascii=False to preserve Arabic and other Unicode characters
+        return json.dumps(
+            content,
+            ensure_ascii=False,  # Don't escape Unicode
+            allow_nan=False,
+            indent=None,
+            separators=(",", ":"),
+            default=str,
+        ).encode("utf-8")
 
 app.add_middleware(
     CORSMiddleware,
@@ -333,7 +348,7 @@ async def explain_proverb(request: ExplainRequest):
         
         result = generate_explanation_with_visual_prompt(proverb_text, max_tokens=4000)
         
-        return {
+        response_data = {
             "proverb": proverb_text,
             "literal_meaning": result["literal_meaning"],
             "hidden_meaning": result["hidden_meaning"],
@@ -346,6 +361,13 @@ async def explain_proverb(request: ExplainRequest):
             "source": "groq_rag_trilingual",
             "timestamp": datetime.now().isoformat()
         }
+        
+        # Return with proper UTF-8 encoding for Arabic text (no Unicode escaping)
+        return UTF8JSONResponse(
+            content=response_data,
+            status_code=200,
+            media_type="application/json; charset=utf-8"
+        )
     except Exception as e:
         logger.error(f"Explanation generation error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to generate explanation: {str(e)}")
@@ -820,4 +842,4 @@ async def _generate_background(task_id: str, proverb_id: str, proverb_text: str,
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=8888, log_level="info")
