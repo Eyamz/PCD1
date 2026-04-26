@@ -136,20 +136,22 @@ def main():
 
     config = load_and_print_config()
 
+    api = config.get("api", {})
+    host = api.get("host", "0.0.0.0")
+    port = api.get("port", 8000)
+
     logger.info("=" * 55)
-    logger.info("Starting server at  http://localhost:8000")
+    logger.info(f"Starting server at  http://localhost:{port}")
     logger.info("Press Ctrl+C to stop")
     logger.info("=" * 55)
 
     try:
         import uvicorn
         from app import app
-
-        api = config.get("api", {})
         uvicorn.run(
             app,
-            host=api.get("host", "0.0.0.0"),
-            port=api.get("port", 8000),
+            host=host,
+            port=port,
             log_level="info",
             reload=api.get("debug", False),
         )

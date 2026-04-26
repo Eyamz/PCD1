@@ -25,6 +25,7 @@ einops>=0.7
 # Image generation (SDXL)
 diffusers>=0.25.0
 pillow>=10.0
+open-clip-torch>=2.20.0
 
 # RAG Pipeline (FAISS + OpenRouter)
 langchain>=0.1.0
